@@ -95,6 +95,23 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>1.4.13</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <!-- 使用当前模块自己的 Dockerfile -->
+                    <dockerfile>${project.basedir}/Dockerfile</dockerfile>
+
+                    <!-- 已经按照你的 SWR 仓库路径写好 -->
+                    <repository>swr.cn-north-4.myhuaweicloud.com/yzc-oomall/${project.artifactId}</repository>
+
+                    <!-- 标签用项目版本 -->
+                    <tag>${project.version}</tag>
+
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
