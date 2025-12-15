@@ -2,12 +2,13 @@ package org.oomall.labservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.oomall.labaftersale.controller.dto.AftersaleDto;
+
 import org.oomall.labservice.controller.dto.SimpleService;
 import org.oomall.labservice.dao.ServiceOrderDao;
 import org.oomall.labservice.feign.AftersaleFeign;
+import org.oomall.labservice.feign.dto.AftersaleDto;
 import org.oomall.labservice.mapper.Po.ServiceOrderPo;
-import org.oomall.labservice.mapper.ServiceOrderMapper;
+
 import org.oomall.labservice.model.ReturnNo;
 import org.oomall.labservice.model.ReturnObject;
 import org.springframework.stereotype.Service;

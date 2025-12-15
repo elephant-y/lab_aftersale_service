@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
+    <packaging>jar</packaging>
     <groupId>org.oomall</groupId>
     <artifactId>lab-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -90,6 +90,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

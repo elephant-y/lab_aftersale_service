@@ -109,6 +109,8 @@
                     <!-- 标签用项目版本 -->
                     <tag>${project.version}</tag>
 
+                    <!-- 可选：同时打一个 latest 标签，方便测试 -->
+
                 </configuration>
             </plugin>
             <plugin>
