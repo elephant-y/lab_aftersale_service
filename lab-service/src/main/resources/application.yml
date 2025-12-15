@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: lab-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://119.3.215.142:3306/service_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 119.3.163.139:8848
+        namespace: public
+        group: DEFAULT_GROUP
+
+  mybatis:
+    type-aliases-package: com.oomall.serviceorder.po
+    configuration:
+      map-underscore-to-camel-case: true
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+  logging:
+    level:
+      com.oomall.serviceorder.mapper: debug
+server:
+  port: 8080

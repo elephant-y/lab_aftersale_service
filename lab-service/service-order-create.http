@@ -1,0 +1,53 @@
+### 创建服务单 - 上门维修
+POST http://localhost:8082/internal/shops/1/aftersales/123/serviceorders
+Content-Type: application/json
+# authorization: Bearer your-token-here   # 如果不需要认证，注释掉这行
+
+{
+  "type": 0,
+  "consignee": {
+    "name": "张三",
+    "mobile": "13800138000",
+    "regionId": 110101,
+    "address": "北京市朝阳区望京SOHO T3 20层"
+  }
+}
+
+> {%
+    client.test("创建服务单成功", function() {
+        client.assert(response.status === 200, "预期状态码 200，但实际是 " + response.status);
+        client.assert(response.contentType.json.errno === 0, "errno 应为 0，实际为 " + response.contentType.json.errno);
+    });
+%}
+
+###
+
+### 创建服务单 - 寄件维修
+POST http://localhost:8082/internal/shops/1/aftersales/123/serviceorders
+Content-Type: application/json
+
+{
+  "type": 1,
+  "consignee": {
+    "name": "李四",
+    "mobile": "13900139000",
+    "regionId": 310101,
+    "address": "上海市黄浦区人民广场888号"
+  }
+}
+
+###
+
+### 创建服务单 - 线下维修
+POST http://localhost:8082/internal/shops/1/aftersales/123/serviceorders
+Content-Type: application/json
+
+{
+  "type": 2,
+  "consignee": {
+    "name": "王五",
+    "mobile": "13700137000",
+    "regionId": 440301,
+    "address": "深圳市福田区深南大道6008号"
+  }
+}
