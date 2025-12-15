@@ -1,16 +1,13 @@
-
-FROM openjdk:17-jre-slim
+FROM swr.cn-north-4.myhuaweicloud.com/oomall-javaee/openjdk:17-alpine
 
 
 WORKDIR /app
 
 
-ARG JAR_FILE=target/*.jar
-
-COPY ${JAR_FILE} app.jar
+COPY target/*.jar app.jar
 
 
 EXPOSE 8080
 
-# 启动命令
-ENTRYPOINT ["java","-jar","/app.jar"]
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
