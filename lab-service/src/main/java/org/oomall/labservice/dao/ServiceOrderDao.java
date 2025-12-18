@@ -2,18 +2,20 @@ package org.oomall.labservice.dao;
 
 import lombok.RequiredArgsConstructor;
 import org.oomall.labservice.mapper.Po.ServiceOrderPo;
-import org.oomall.labservice.mapper.ServiceOrderMapper;
+import org.oomall.labservice.mapper.ServiceOrderRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
 public class ServiceOrderDao {
-    private final ServiceOrderMapper serviceOrderMapper;
+
+    private final ServiceOrderRepository serviceOrderRepository;
+
     public boolean existsByAftersaleId(Long aftersaleId) {
-        return serviceOrderMapper.countByAftersaleId(aftersaleId) > 0;
+        return serviceOrderRepository.countByAftersaleId(aftersaleId) > 0;
     }
 
     public int insert(ServiceOrderPo serviceOrderPo) {
-        return serviceOrderMapper.insert(serviceOrderPo);
+        return serviceOrderRepository.save(serviceOrderPo).getId().intValue();
     }
 }

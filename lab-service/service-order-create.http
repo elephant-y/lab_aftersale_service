@@ -1,16 +1,13 @@
 ### 创建服务单 - 上门维修
-POST http://localhost:8082/internal/shops/1/aftersales/123/serviceorders
+POST http://localhost:8081/internal/shops/1/aftersales/123/serviceorders
 Content-Type: application/json
 # authorization: Bearer your-token-here   # 如果不需要认证，注释掉这行
 
 {
   "type": 0,
-  "consignee": {
-    "name": "张三",
-    "mobile": "13800138000",
-    "regionId": 110101,
-    "address": "北京市朝阳区望京SOHO T3 20层"
-  }
+  "consignee":
+     "张三,13800138000,110101,北京市朝阳区望京SOHO T3 20层"
+
 }
 
 > {%
@@ -23,31 +20,25 @@ Content-Type: application/json
 ###
 
 ### 创建服务单 - 寄件维修
-POST http://localhost:8082/internal/shops/1/aftersales/123/serviceorders
+POST http://119.3.163.139:8080/internal/shops/1/aftersales/123/serviceorders
 Content-Type: application/json
 
 {
   "type": 1,
-  "consignee": {
-    "name": "李四",
-    "mobile": "13900139000",
-    "regionId": 310101,
-    "address": "上海市黄浦区人民广场888号"
-  }
+  "consignee":
+    "李四,13900139000,310101,上海市黄浦区人民广场888号"
+
 }
 
 ###
 
 ### 创建服务单 - 线下维修
-POST http://localhost:8082/internal/shops/1/aftersales/123/serviceorders
+POST http://119.3.163.139:8080/internal/shops/1/aftersales/123/serviceorders
 Content-Type: application/json
 
 {
   "type": 2,
-  "consignee": {
-    "name": "王五",
-    "mobile": "13700137000",
-    "regionId": 440301,
-    "address": "深圳市福田区深南大道6008号"
-  }
+  "consignee":
+     "王五,13700137000,440301,深圳市福田区深南大道6008号"
+
 }

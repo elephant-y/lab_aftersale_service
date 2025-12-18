@@ -16,7 +16,7 @@ spring:
         fail-fast: false
 
   mybatis:
-    type-aliases-package: com.oomall.aftersale.po
+    type-aliases-package: com.oomall.aftersale.mapper.po
     configuration:
       map-underscore-to-camel-case: true
       log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

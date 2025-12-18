@@ -1,12 +1,12 @@
 ### 商家确认售后申请（同意）
-PUT http://localhost:8081/shops/1/aftersales/123/confirm
+PUT http://116.205.111.229:8080/shops/1/aftersales/123/confirm
 Content-Type: application/json
 
 
 {
   "confirm": true,
-  "conclusion": "string",
-  "type": 0
+  "conclusion": "jladsjladsakdalsd",
+  "type": 2
 }
 
 ### 商家确认售后申请（拒绝）
@@ -15,6 +15,7 @@ Content-Type: application/json
 
 
 {
-  "action": "reject",
-  "reason": "商品无质量问题，不支持无理由退货"
+  "confirm": false,
+  "conclusion": "商品无质量问题，不支持无理由退货",
+  "type": 0
 }

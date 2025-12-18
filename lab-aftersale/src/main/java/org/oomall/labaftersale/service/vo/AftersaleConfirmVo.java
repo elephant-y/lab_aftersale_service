@@ -2,9 +2,10 @@ package org.oomall.labaftersale.service.vo;
 
 import lombok.Data;
 
+import org.oomall.labaftersale.mapper.po.Consignee;
+
 @Data
 public class AftersaleConfirmVo {
-    private Boolean confirm;
-    private String conclusion;
-    private Integer type; // 0换货，1退货, 2维修
+    private Integer type;
+    private Consignee consignee;
 }

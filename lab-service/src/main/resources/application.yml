@@ -24,4 +24,4 @@ spring:
     level:
       com.oomall.serviceorder.mapper: debug
 server:
-  port: 8080
+  port: 8081

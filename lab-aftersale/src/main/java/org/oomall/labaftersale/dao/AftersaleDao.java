@@ -1,7 +1,8 @@
 package org.oomall.labaftersale.dao;
 
 import lombok.RequiredArgsConstructor;
-import org.oomall.labaftersale.mapper.AftersaleMapper;
+
+import org.oomall.labaftersale.mapper.AftersaleRepository;
 import org.oomall.labaftersale.mapper.po.AftersalePo;
 import org.springframework.stereotype.Repository;
 
@@ -9,13 +10,13 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class AftersaleDao {
 
-    private final AftersaleMapper aftersaleMapper;
+    private final AftersaleRepository aftersaleRepository;
 
     public AftersalePo findByIdAndShopId(Long id, Long shopId) {
-        return aftersaleMapper.findByIdAndShopId(id, shopId);
+        return aftersaleRepository.findByIdAndShopId(id, shopId);
     }
 
     public void save(AftersalePo po) {
-        aftersaleMapper.save(po);
+        aftersaleRepository.save(po);
     }
 }
