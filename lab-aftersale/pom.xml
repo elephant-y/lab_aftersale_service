@@ -62,6 +62,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- 参数校验依赖（解决@NotNull/@Min等注解无法识别） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
         <!-- 事务支持（可选，web starter 已包含） -->
         <dependency>
             <groupId>org.springframework</groupId>
