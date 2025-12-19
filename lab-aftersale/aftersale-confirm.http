@@ -1,5 +1,5 @@
 ### 商家确认售后申请（同意）
-PUT http://116.205.111.229:8080/shops/1/aftersales/123/confirm
+PUT http://localhost:8080/shops/1/aftersales/123/confirm
 Content-Type: application/json
 
 
