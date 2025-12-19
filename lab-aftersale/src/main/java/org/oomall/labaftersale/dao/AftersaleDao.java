@@ -19,4 +19,9 @@ public class AftersaleDao {
     public void save(AftersalePo po) {
         aftersaleRepository.save(po);
     }
+
+    // 新增：校验订单商品是否已提交售后
+    public boolean existsByOrderItemId(Long orderItemId) {
+        return aftersaleRepository.existsByOrderItemId(orderItemId);
+    }
 }

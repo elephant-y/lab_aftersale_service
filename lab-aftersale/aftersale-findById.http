@@ -1,0 +1,58 @@
+### 1. 正常查询（售后单存在且属于当前商户）
+GET http://116.205.111.229:8080/shops/1/aftersales/1
+Accept: application/json
+
+> {%
+    client.test("正常查询售后信息成功", function() {
+        // 1. 断言HTTP状态码为200
+        client.assert(response.status === 200, "预期状态码200，实际为" + response.status);
+
+        // 2. 解析响应体（ReturnObject结构）
+        const json = response.body;
+
+        // 3. 断言核心字段
+        client.assert(json.errno === 0, "预期errno=0（成功），实际为" + json.errno);
+        client.assert(json.errmsg === "成功", "预期errmsg=成功，实际为" + json.errmsg);
+        client.assert(!!json.data, "响应data不能为空（应返回售后信息）");
+
+        // 4. 断言售后信息的关键字段（按需调整，匹配你的AftersalePo结构）
+        if (json.data) {
+            client.assert(json.data.id === 1, "售后单ID匹配，实际为" + json.data.id);
+            client.assert(json.data.shopId === 1, "商户ID匹配，实际为" + json.data.shopId);
+            client.assert(["APPLY", "CONFIRMED"].includes(json.data.status), "售后单状态合法");
+            client.assert(!!json.data.orderItemId, "订单商品ID不能为空");
+        }
+    });
+%}
+
+### 2. 异常查询（售后单ID不存在）
+GET http://116.205.111.229:8080/shops/1/aftersales/9
+Accept: application/json
+
+> {%
+    client.test("查询不存在的售后单失败", function() {
+        client.assert(response.status === 200, "预期状态码200，实际为" + response.status);
+        const json = response.body;
+
+        // 断言错误码（对应ReturnNo.RESOURCE_NOT_FOUND，通常为404）
+        client.assert(json.errno === 504, "预期errno=504（资源不存在），实际为" + json.errno);
+        client.assert(json.errmsg.includes("售后单不存在"), "错误提示应包含'售后单不存在'，实际为" + json.errmsg);
+        client.assert(json.data === null, "data应为null，实际为" + json.data);
+    });
+%}
+
+### 3. 异常查询（售后单存在但不属于当前商户）
+GET http://116.205.111.229:8080/shops/99/aftersales/1001
+Accept: application/json
+
+> {%
+    client.test("查询非本商户的售后单失败", function() {
+        client.assert(response.status === 200, "预期状态码200，实际为" + response.status);
+        const json = response.body;
+
+        // 断言错误码（同“售后单不存在”，或自定义508，按你的ReturnNo调整）
+        client.assert(json.errno === 504, "预期errno=504（无权限/不存在），实际为" + json.errno);
+        client.assert(json.errmsg.includes("售后单不存在或不属于当前商户"), "错误提示符合预期，实际为" + json.errmsg);
+        client.assert(json.data === null, "data应为null，实际为" + json.data);
+    });
+%}

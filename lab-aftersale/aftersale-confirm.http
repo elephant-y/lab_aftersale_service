@@ -1,16 +1,15 @@
 ### 商家确认售后申请（同意）
-PUT http://localhost:8080/shops/1/aftersales/123/confirm
+PUT http://116.205.111.229:8080/shops/2/aftersales/1010/confirm
 Content-Type: application/json
-
 
 {
   "confirm": true,
-  "conclusion": "jladsjladsakdalsd",
+  "conclusion": "审核通过",
   "type": 2
 }
 
 ### 商家确认售后申请（拒绝）
-PUT http://localhost:8080/shops/1/aftersales/456/confirm
+PUT http://116.205.111.229:8080/shops/1/aftersales/1002/confirm
 Content-Type: application/json
 
 

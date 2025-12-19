@@ -2,6 +2,7 @@ package org.oomall.labaftersale.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.oomall.labaftersale.controller.dto.AftersaleApplyDto;
 import org.oomall.labaftersale.controller.dto.AftersaleDto;
 import org.oomall.labaftersale.dao.AftersaleDao;
 import org.oomall.labaftersale.feign.ServiceOrderFeign;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+
 
 @Slf4j
 @Service
@@ -58,6 +60,72 @@ public class AftersaleService {
     public AftersalePo getAftersale(Long shopId, Long id) {
         AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
         return po;
+    }
+
+    /**
+     * 顾客提交售后申请，创建售后单（状态=APPLY）
+     * @param orderItemId 订单商品ID（PATH参数）
+     * @param applyDto 请求体参数
+     */
+    @Transactional
+    public ReturnObject createAftersale(Long orderItemId, AftersaleApplyDto applyDto) {
+        // 1. 基础参数校验
+        if (orderItemId == null) {
+            log.error("【售后模块】创建售后单失败：订单商品ID不能为空");
+            return new ReturnObject(ReturnNo.FIELD_NOTVALID, "订单商品ID不能为空");
+        }
+
+        // 2. 校验售后数量和原因
+        if (applyDto.getQuantity() == null || applyDto.getQuantity() < 1) {
+            log.error("【售后模块】创建售后单失败：售后数量不合法，orderItemId={}", orderItemId);
+            return new ReturnObject(ReturnNo.FIELD_NOTVALID, "售后数量不能小于1");
+        }
+        if (applyDto.getReason() == null || applyDto.getReason().trim().isEmpty()) {
+            log.error("【售后模块】创建售后单失败：售后原因不能为空，orderItemId={}", orderItemId);
+            return new ReturnObject(ReturnNo.FIELD_NOTVALID, "售后原因不能为空");
+        }
+
+        // 3. 收件人信息校验（姓名+电话必填）
+        Consignee consignee = applyDto.getConsignee();
+        if (consignee == null || consignee.getName() == null || consignee.getMobile() == null) {
+            log.error("【售后模块】创建售后单失败：收件人姓名/电话不能为空，orderItemId={}", orderItemId);
+            return new ReturnObject(ReturnNo.FIELD_NOTVALID, "收件人姓名和电话为必填项");
+        }
+
+        // 4. 校验是否已提交过售后（通过order_item_id唯一约束）
+        if (aftersaleDao.existsByOrderItemId(orderItemId)) {
+            log.error("【售后模块】创建售后单失败：该订单商品已提交售后，orderItemId={}", orderItemId);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW, "该订单商品已提交售后，请勿重复申请");
+        }
+
+        // 5. 构造售后单Po（状态=APPLY）
+        AftersalePo aftersalePo = new AftersalePo();
+        aftersalePo.setOrderItemId(orderItemId); // 关联订单商品ID
+        aftersalePo.setCustomerId(1L);
+        aftersalePo.setShopId(1L); // 若有店铺ID来源（如从订单商品查询）可替换，暂无则默认1
+        aftersalePo.setStatus(AftersaleStatus.APPLY); // 初始状态：申请中
+        aftersalePo.setType(selectType(applyDto.getType())); // 转换为AftersaleType枚举
+        aftersalePo.setQuantity(applyDto.getQuantity()); // 售后数量
+        aftersalePo.setConclusion(applyDto.getReason() == null ? "" : applyDto.getReason()); // 售后原因存入conclusion字段
+        // 填充收件人信息
+        aftersalePo.setConsigneeName(consignee.getName());
+        aftersalePo.setConsigneeMobile(consignee.getMobile());
+        aftersalePo.setConsigneeRegionId(consignee.getRegionId());
+        aftersalePo.setConsigneeAddress(consignee.getAddress());
+        aftersalePo.setServiceOrderId(null); // 未创建服务单，默认为null
+
+        // 6. 入库保存
+        try {
+            aftersaleDao.save(aftersalePo);
+            log.info("【售后模块】售后单创建成功，orderItemId={}, 售后单ID={}, 状态=APPLY",
+                    orderItemId, aftersalePo.getId());
+        } catch (Exception e) {
+            log.error("【售后模块】创建售后单入库失败，orderItemId={}", orderItemId, e);
+            return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL, "售后单创建失败");
+        }
+
+        // 7. 返回结果（包含售后单ID）
+        return new ReturnObject(aftersalePo.getId());
     }
 
     /**
@@ -104,10 +172,8 @@ public class AftersaleService {
         // 设置售后类型
         po.setType(selectType(vo.getType()));
 
-
-
         // 创建服务单（仅维修类型）
-        if (vo.getType() == 2) { // 2代表维修类型
+        if (selectType(vo.getType()) == AftersaleType.REPAIR) { // 2代表维修类型
             ReturnObject ret = serviceOrderFeign.createServiceOrder(shopId, po.getId(), vo);
 
             if (ret.getErrno() != ReturnNo.OK.getErrNo()) {

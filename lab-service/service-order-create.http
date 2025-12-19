@@ -1,23 +1,35 @@
 ### 创建服务单 - 上门维修
-POST http://localhost:8081/internal/shops/1/aftersales/123/serviceorders
+POST http://119.3.163.139:8080/internal/shops/1/aftersales/1/serviceorders
 Content-Type: application/json
-# authorization: Bearer your-token-here   # 如果不需要认证，注释掉这行
 
 {
   "type": 0,
-  "consignee":
-     "张三,13800138000,110101,北京市朝阳区望京SOHO T3 20层"
-
+  "consignee": {
+    "name": "张三",
+    "mobile": "13800138000",
+    "regionId": 110101,
+    "address": "北京市朝阳区望京SOHO T3 20层"
+  }
 }
 
 > {%
     client.test("创建服务单成功", function() {
+        // 1. 验证状态码
         client.assert(response.status === 200, "预期状态码 200，但实际是 " + response.status);
-        client.assert(response.contentType.json.errno === 0, "errno 应为 0，实际为 " + response.contentType.json.errno);
+
+        // 2. 核心修正：直接使用response.body（已是JSON对象，无需parse）
+        const json = response.body;
+
+        // 3. 验证核心字段（容错：确保json存在且有errno）
+        client.assert(!!json, "响应体为空");
+        client.assert(json.hasOwnProperty('errno'), "响应JSON缺少errno字段");
+        client.assert(json.errno === 0, "errno 应为 0，实际为 " + json.errno);
+
+        // 可选：验证errmsg和data
+        client.assert(json.errmsg === "成功", "errmsg 应为成功，实际为 " + json.errmsg);
+        client.assert(!!json.data, "响应缺少data字段");
     });
 %}
-
-###
 
 ### 创建服务单 - 寄件维修
 POST http://119.3.163.139:8080/internal/shops/1/aftersales/123/serviceorders
@@ -25,12 +37,21 @@ Content-Type: application/json
 
 {
   "type": 1,
-  "consignee":
-    "李四,13900139000,310101,上海市黄浦区人民广场888号"
-
+  "consignee": {
+    "name": "李四",
+    "mobile": "13900139000",
+    "regionId": 310101,
+    "address": "上海市黄浦区人民广场888号"
+  }
 }
 
-###
+> {%
+    client.test("创建寄件维修服务单成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+    });
+%}
 
 ### 创建服务单 - 线下维修
 POST http://119.3.163.139:8080/internal/shops/1/aftersales/123/serviceorders
@@ -38,7 +59,18 @@ Content-Type: application/json
 
 {
   "type": 2,
-  "consignee":
-     "王五,13700137000,440301,深圳市福田区深南大道6008号"
-
+  "consignee": {
+    "name": "王五",
+    "mobile": "13700137000",
+    "regionId": 440301,
+    "address": "深圳市福田区深南大道6008号"
+  }
 }
+
+> {%
+    client.test("创建线下维修服务单成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+    });
+%}
