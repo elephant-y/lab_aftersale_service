@@ -127,7 +127,7 @@ public class AftersaleService {
 
     private AftersaleType selectType(Integer type) {
         if (type == 0) {return AftersaleType.RETURN;}
-        else if (type == 2) {return AftersaleType.EXCHANGE;}
+        else if (type == 1) {return AftersaleType.EXCHANGE;}
         else {return AftersaleType.REPAIR;}
     }
 }
