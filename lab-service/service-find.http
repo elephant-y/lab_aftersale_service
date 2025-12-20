@@ -1,5 +1,5 @@
-### 按ID查询服务单（正常场景）
-GET http://119.3.163.139:8080/internal/shops/1/serviceorders/42
+### 按商户ID查询服务单（正常场景）
+GET http://119.3.163.139:8080/internal/shops/1/serviceorders/24
 
 > {%
     client.test("查询服务单成功", function() {
@@ -18,6 +18,18 @@ GET http://119.3.163.139:8080/internal/shops/2/serviceorders/9999
         client.assert(response.status === 200, "状态码错误");
         var json = JSON.parse(response.body);
         client.assert(json.errno === 504, "errno应为504（资源不存在）");
+    });
+%}
+
+### 按服务商ID查询服务单（正常场景）
+GET http://119.3.163.139:8080/internal/maintainers/1/serviceorders/24
+
+> {%
+    client.test("查询服务单成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+        client.assert(typeof json.data === 'object' && json.data.id, "返回应为服务单对象");
     });
 %}
 

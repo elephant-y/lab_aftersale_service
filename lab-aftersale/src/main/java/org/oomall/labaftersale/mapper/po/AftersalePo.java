@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.oomall.labaftersale.model.AftersaleStatus;
 import org.oomall.labaftersale.model.AftersaleType;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -47,4 +48,9 @@ public class AftersalePo {
     private Long consigneeRegionId;
     @Column(name = "consignee_address")
     private String consigneeAddress;
+
+    @Column(name = "gmt_create")
+    private LocalDateTime gmtCreate;
+    @Column(name = "gmt_modified")
+    private LocalDateTime gmtModified;
 }

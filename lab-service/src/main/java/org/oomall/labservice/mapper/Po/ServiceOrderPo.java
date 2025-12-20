@@ -5,6 +5,8 @@ package org.oomall.labservice.mapper.Po;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 
 @Data
 @Entity
@@ -38,4 +40,15 @@ public class ServiceOrderPo {
 
     @Column(name = "maintainer_id")
     private Long maintainerId;
+    @Column(name = "maintainer_name")
+    private String maintainerName;
+    @Column(name = "maintainer_mobile")
+    private String maintainerMobile;
+    @Column(name = "maintainer_address")
+    private String maintainerAddress;
+
+    @Column(name = "gmt_create")
+    private LocalDateTime gmtCreate;
+    @Column(name = "gmt_modified")
+    private LocalDateTime gmtModified;
 }

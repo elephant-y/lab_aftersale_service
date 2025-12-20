@@ -14,9 +14,12 @@ import org.oomall.labaftersale.model.AftersaleType;
 import org.oomall.labaftersale.model.ReturnNo;
 import org.oomall.labaftersale.model.ReturnObject;
 import org.oomall.labaftersale.service.vo.AftersaleConfirmVo;
+import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
+import org.oomall.labaftersale.model.ServiceOrderType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 
@@ -42,18 +45,19 @@ public class AftersaleService {
         }
 
         // 状态校验
-        if (!AftersaleStatus.APPLY.equals(po.getStatus())) {
+        if (!AftersaleStatus.APPLIED.equals(po.getStatus())) {
             return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         }
 
-        if (dto.isConfirm() && selectType(dto.getType()) == AftersaleType.REPAIR) {
-            if (dto.getServiceType() == null || (dto.getServiceType() != 0 && dto.getServiceType() != 1)) {
+        if (dto.isConfirm() && AftersaleType.fromInt(dto.getType()) == AftersaleType.REPAIR) {
+            if (dto.getServiceType() == null || (ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SITEMENT && ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SHIPMENT)) {
                 return new ReturnObject(ReturnNo.FIELD_NOTVALID, "服务单类型必须为0（上门）或1（寄件）");
             }
         }
 
         // 处理审核结果
         handleAftersaleReview(po, dto, shopId);
+        po.setGmtModified(LocalDateTime.now()); // 更新修改时间
 
         // 保存更新后的售后单
         aftersaleDao.save(po);
@@ -61,9 +65,38 @@ public class AftersaleService {
         return new ReturnObject(ReturnNo.OK);
     }
 
-    public AftersalePo getAftersale(Long shopId, Long id) {
+    public AftersaleResponseDto getAftersale(Long shopId, Long id) {
         AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
-        return po;
+        if (po == null) {
+            return null;
+        }
+        return convertToResponseDto(po); // 转换Po为DTO
+    }
+
+    // 实体转DTO的方法
+    private AftersaleResponseDto convertToResponseDto(AftersalePo po) {
+        AftersaleResponseDto dto = new AftersaleResponseDto();
+        dto.setId(po.getId());
+        dto.setCustomerId(po.getCustomerId());
+        dto.setOrderItemId(po.getOrderItemId());
+        dto.setShopId(po.getShopId());
+        dto.setType(po.getType());
+        dto.setStatus(po.getStatus());
+        dto.setConclusion(po.getConclusion());
+        dto.setQuantity(po.getQuantity());
+        dto.setServiceOrderId(po.getServiceOrderId());
+        dto.setGmtCreate(po.getGmtCreate());
+        dto.setGmtModified(po.getGmtModified());
+
+        // 封装收件人信息为Consignee对象
+        Consignee consignee = new Consignee();
+        consignee.setName(po.getConsigneeName());
+        consignee.setMobile(po.getConsigneeMobile());
+        consignee.setRegionId(po.getConsigneeRegionId());
+        consignee.setAddress(po.getConsigneeAddress());
+        dto.setConsignee(consignee);
+
+        return dto;
     }
 
     /**
@@ -102,13 +135,19 @@ public class AftersaleService {
             return new ReturnObject(ReturnNo.STATE_NOT_ALLOW, "该订单商品已提交售后，请勿重复申请");
         }
 
-        // 5. 构造售后单Po（状态=APPLY）
+        AftersaleType aftersaleType = AftersaleType.fromInt(applyDto.getType());
+        if (aftersaleType == null) {
+            log.error("【售后模块】创建售后单失败：售后类型不合法，orderItemId={}", orderItemId);
+            return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR);
+        }
+
+        // 5. 构造售后单Po（状态=APPLIED）
         AftersalePo aftersalePo = new AftersalePo();
         aftersalePo.setOrderItemId(orderItemId); // 关联订单商品ID
         aftersalePo.setCustomerId(1L);
         aftersalePo.setShopId(1L); // 若有店铺ID来源（如从订单商品查询）可替换，暂无则默认1
-        aftersalePo.setStatus(AftersaleStatus.APPLY); // 初始状态：申请中
-        aftersalePo.setType(selectType(applyDto.getType())); // 转换为AftersaleType枚举
+        aftersalePo.setStatus(AftersaleStatus.APPLIED); // 初始状态：申请中
+        aftersalePo.setType(AftersaleType.fromInt(applyDto.getType())); // 转换为AftersaleType枚举
         aftersalePo.setQuantity(applyDto.getQuantity()); // 售后数量
         aftersalePo.setConclusion(applyDto.getReason() == null ? "" : applyDto.getReason()); // 售后原因存入conclusion字段
         // 填充收件人信息
@@ -118,6 +157,8 @@ public class AftersaleService {
         aftersalePo.setConsigneeAddress(consignee.getAddress());
         aftersalePo.setServiceOrderId(null); // 未创建服务单，默认为null
 
+        aftersalePo.setGmtCreate(LocalDateTime.now()); // 设置创建时间
+        aftersalePo.setGmtModified(LocalDateTime.now()); // 设置修改时间
         // 6. 入库保存
         try {
             aftersaleDao.save(aftersalePo);
@@ -162,9 +203,9 @@ public class AftersaleService {
      * 处理审核拒绝
      */
     private void handleRejectReview(AftersalePo po, AftersaleDto dto, Long shopId) {
-        po.setStatus(AftersaleStatus.REJECT);
+        po.setStatus(AftersaleStatus.REJECTED);
         po.setServiceOrderId(null);
-        po.setType(selectType(dto.getType()));
+        po.setType(AftersaleType.fromInt(dto.getType()));
         log.info("【售后模块】审核拒绝售后单id={}", po.getId());
     }
 
@@ -172,12 +213,12 @@ public class AftersaleService {
      * 处理审核通过
      */
     private void handleApproveReview(AftersalePo po, AftersaleConfirmVo vo, Long shopId) {
-        po.setStatus(AftersaleStatus.CONFIRMED);
+        po.setStatus(AftersaleStatus.PROCESSING);
         // 设置售后类型
-        po.setType(selectType(vo.getType()));
+        po.setType(AftersaleType.fromInt(vo.getType()));
 
         // 创建服务单（仅维修类型）
-        if (selectType(vo.getType()) == AftersaleType.REPAIR) { // 2代表维修类型
+        if (AftersaleType.fromInt(vo.getType()) == AftersaleType.REPAIR) { // 2代表维修类型
             ReturnObject ret = serviceOrderFeign.createServiceOrder(shopId, po.getId(), vo);
 
             if (ret.getErrno() != ReturnNo.OK.getErrNo()) {
@@ -195,9 +236,4 @@ public class AftersaleService {
 
     }
 
-    private AftersaleType selectType(Integer type) {
-        if (type == 0) {return AftersaleType.RETURN;}
-        else if (type == 1) {return AftersaleType.EXCHANGE;}
-        else {return AftersaleType.REPAIR;}
-    }
 }

@@ -1,6 +1,6 @@
 package org.oomall.labservice.model;
 
-
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ServiceOrderStatus {
     WAITING,  // 待派单
@@ -9,5 +9,10 @@ public enum ServiceOrderStatus {
     ACCEPTED, // 已接单
     REJECTED, // 已拒单
     RECEIVED, // 已签收
-    FINISHED  // 已完成
+    FINISHED; // 已完成
+
+    @JsonValue
+    public String getStatusName() {
+        return this.name();
+    }
 }

@@ -4,6 +4,7 @@ package org.oomall.labaftersale.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
 import org.oomall.labaftersale.mapper.po.AftersalePo;
 import org.oomall.labaftersale.controller.dto.AftersaleDto;
 import org.oomall.labaftersale.controller.dto.AftersaleApplyDto;
@@ -36,8 +37,8 @@ public class AftersaleController {
             @PathVariable Long shopId,
             @PathVariable Long id) {
         log.info("【售后模块】商户查询售后信息，shopId={}, aftersaleId={}", shopId, id);
-        AftersalePo aftersalePo = aftersaleService.getAftersale(shopId, id);
-        if (aftersalePo == null) {
+        AftersaleResponseDto dto = aftersaleService.getAftersale(shopId, id);
+        if (dto == null) {
             return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST, "售后单不存在或不属于当前商户");
         }
         return new ReturnObject(ReturnNo.OK, aftersaleService.getAftersale(shopId, id));

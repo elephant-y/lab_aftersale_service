@@ -12,6 +12,8 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrderPo, Lo
 
     ServiceOrderPo findByIdAndShopId(Long id, Long shopId);
 
+    ServiceOrderPo findByIdAndMaintainerId(Long id, Long maintainerId);
+
     // 统计 aftersaleId 出现次数
     int countByAftersaleId(Long aftersaleId);
 }

@@ -19,7 +19,7 @@ Accept: application/json
         if (json.data) {
             client.assert(json.data.id === 1, "售后单ID匹配，实际为" + json.data.id);
             client.assert(json.data.shopId === 1, "商户ID匹配，实际为" + json.data.shopId);
-            client.assert(["APPLY", "CONFIRMED"].includes(json.data.status), "售后单状态合法");
+            client.assert(["APPLIED", "CONFIRMED"].includes(json.data.status), "售后单状态合法");
             client.assert(!!json.data.orderItemId, "订单商品ID不能为空");
         }
     });

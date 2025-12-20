@@ -1,0 +1,19 @@
+# 商户分配服务单
+POST http://119.3.163.139:8080/shops/1/serviceorders/24/assign
+Content-Type: application/json
+
+> {%
+    client.test("分配服务单成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno 错误，预期 0，实际" + json.errno);});
+
+    client.test("分配服务单失败 - 服务单不存在", function() {
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 504, "errno 错误，预期 504（资源不存在），实际" + json.errno);
+    });
+    client.test("分配服务单失败 - 状态不允许", function() {
+        var json = JSON.parse (response.body);
+        client.assert (json.errno === 507, "errno 错误，预期 507（状态不允许），实际" + json.errno);
+    });
+%}

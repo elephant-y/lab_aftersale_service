@@ -10,7 +10,7 @@ Content-Type: application/json
 }
 
 ### 商家确认售后申请（同意维修类型-寄件服务）
-PUT http://116.205.111.229:8080/shops/1/aftersales/1051/confirm
+PUT http://116.205.111.229:8080/shops/1/aftersales/1011/confirm
 Content-Type: application/json
 
 {
