@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ServiceOrderRepository extends JpaRepository<ServiceOrderPo, Long> {
 
+    ServiceOrderPo findByIdAndShopId(Long id, Long shopId);
+
     // 统计 aftersaleId 出现次数
     int countByAftersaleId(Long aftersaleId);
 }

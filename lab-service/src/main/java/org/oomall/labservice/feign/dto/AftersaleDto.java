@@ -5,9 +5,8 @@ import lombok.Data;
 
 
 import lombok.NoArgsConstructor;
-import org.oomall.labservice.feign.po.AftersalePo;
-import org.oomall.labservice.model.AftersaleStatus;
 import org.oomall.labservice.model.AftersaleType;
+import org.oomall.labservice.model.AftersaleStatus;
 
 @Data
 @AllArgsConstructor
@@ -16,6 +15,5 @@ public class AftersaleDto {
     private Long id;
     private AftersaleType type;
     private AftersaleStatus status;
-
 
 }

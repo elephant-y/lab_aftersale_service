@@ -7,4 +7,5 @@ public enum AftersaleStatus {
     CONFIRMED, // 审核通过
     REJECT;     // 审核拒绝
 
+
 }

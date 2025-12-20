@@ -2,9 +2,8 @@ package org.oomall.labservice.feign.po;
 
 
 import lombok.Data;
-import org.oomall.labservice.model.AftersaleStatus;
 import org.oomall.labservice.model.AftersaleType;
-
+import org.oomall.labservice.model.AftersaleStatus;
 
 @Data
 public class AftersalePo {

@@ -6,6 +6,6 @@ import org.oomall.labservice.mapper.Po.Consignee;
 @Data
 public class ServiceOrderVo {
         private Long id;
-        private Integer type;
+        private Integer serviceType;
         private Consignee consignee;
 }

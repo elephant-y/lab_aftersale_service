@@ -11,6 +11,10 @@ public class ServiceOrderDao {
 
     private final ServiceOrderRepository serviceOrderRepository;
 
+    public ServiceOrderPo findByIdAndShopId(Long id, Long shopId) {
+        return serviceOrderRepository.findByIdAndShopId(id, shopId);
+    }
+
     public boolean existsByAftersaleId(Long aftersaleId) {
         return serviceOrderRepository.countByAftersaleId(aftersaleId) > 0;
     }

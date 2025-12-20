@@ -1,0 +1,13 @@
+package org.oomall.labservice.model;
+
+
+
+public enum ServiceOrderStatus {
+    WAITING,  // 待派单
+    ASSIGNED, // 已派单
+    CANCELLED,// 已取消
+    ACCEPTED, // 已接单
+    REJECTED, // 已拒单
+    RECEIVED, // 已签收
+    FINISHED  // 已完成
+}

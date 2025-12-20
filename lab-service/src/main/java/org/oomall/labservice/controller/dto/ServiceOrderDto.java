@@ -5,6 +5,6 @@ import org.oomall.labservice.mapper.Po.Consignee;
 
 @Data
 public class ServiceOrderDto {
-    private Integer type;
+    private Integer serviceType;
     private Consignee consignee;
 }

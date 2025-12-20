@@ -3,6 +3,7 @@ package org.oomall.labservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.oomall.labservice.model.AftersaleType;
 import org.oomall.labservice.controller.dto.ServiceOrderDto;
 
 import org.oomall.labservice.dao.ServiceOrderDao;
@@ -24,14 +25,18 @@ import org.springframework.stereotype.Service;
 public class ServiceOrderService {
     private final ServiceOrderDao serviceOrderDao;
     private final AftersaleFeign aftersaleFeign;
+
+    public ServiceOrderPo getServiceOrder(Long shopId, Long id) {
+        ServiceOrderPo po = serviceOrderDao.findByIdAndShopId(id, shopId);
+        return po;
+    }
+
     public ReturnObject createServiceOrder(Long shopId, Long aftersaleId, ServiceOrderDto vo) {
 
         AftersalePo aftersale = aftersaleFeign.getAftersale(shopId, aftersaleId);
         if (aftersale == null) {
             return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
         }
-
-
 
         if (serviceOrderDao.existsByAftersaleId(aftersaleId)) {
             return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
@@ -40,7 +45,7 @@ public class ServiceOrderService {
         ServiceOrderPo po = new ServiceOrderPo();
         po.setShopId(shopId);
         po.setAftersaleId(aftersaleId);
-        po.setType(0); // 默认上门，可根据需求改
+        po.setServiceType(vo.getServiceType());
         po.setConsigneeName(vo.getConsignee().getName());
         po.setConsigneeMobile(vo.getConsignee().getMobile());
         po.setConsigneeRegionId(vo.getConsignee().getRegionId());
@@ -54,7 +59,7 @@ public class ServiceOrderService {
         }
         ServiceOrderVo serviceOrderVo = new ServiceOrderVo();
         serviceOrderVo.setId(po.getId());
-        serviceOrderVo.setType(po.getType());
+        serviceOrderVo.setServiceType(po.getServiceType());
         serviceOrderVo.setConsignee(vo.getConsignee());
 
         log.info("【服务模块】服务单创建成功，aftersaleId={}", aftersaleId);

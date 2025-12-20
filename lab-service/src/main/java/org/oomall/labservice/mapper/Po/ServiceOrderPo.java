@@ -21,9 +21,8 @@ public class ServiceOrderPo {
     @Column(name = "aftersale_id")
     private Long aftersaleId;
 
-    // 如果你希望保留整数类型，可直接用 Integer
-    @Column(name = "type")
-    private Integer type;
+    @Column(name = "service_type")
+    private Integer serviceType;
 
     @Column(name = "consignee_name")
     private String consigneeName;
@@ -34,7 +33,9 @@ public class ServiceOrderPo {
     @Column(name = "consignee_address")
     private String consigneeAddress;
 
-
     @Column(name = "status")
     private Integer status=0;
+
+    @Column(name = "maintainer_id")
+    private Long maintainerId;
 }

@@ -46,7 +46,11 @@ public class AftersaleService {
             return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         }
 
-
+        if (dto.isConfirm() && selectType(dto.getType()) == AftersaleType.REPAIR) {
+            if (dto.getServiceType() == null || (dto.getServiceType() != 0 && dto.getServiceType() != 1)) {
+                return new ReturnObject(ReturnNo.FIELD_NOTVALID, "服务单类型必须为0（上门）或1（寄件）");
+            }
+        }
 
         // 处理审核结果
         handleAftersaleReview(po, dto, shopId);
@@ -142,7 +146,7 @@ public class AftersaleService {
         consignee.setRegionId(po.getConsigneeRegionId());
         consignee.setAddress(po.getConsigneeAddress());
         vo.setConsignee(consignee);
-
+        vo.setServiceType(dto.getServiceType());
 
         // 审核拒绝
         if (!dto.isConfirm()) {

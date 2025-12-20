@@ -1,9 +1,9 @@
 ### 创建服务单 - 上门维修
-POST http://119.3.163.139:8080/internal/shops/1/aftersales/1/serviceorders
+POST http://119.3.163.139:8080/internal/shops/3/aftersales/2005/serviceorders
 Content-Type: application/json
 
 {
-  "type": 0,
+  "serviceType": 0,
   "consignee": {
     "name": "张三",
     "mobile": "13800138000",
@@ -32,11 +32,11 @@ Content-Type: application/json
 %}
 
 ### 创建服务单 - 寄件维修
-POST http://119.3.163.139:8080/internal/shops/1/aftersales/123/serviceorders
+POST http://119.3.163.139:8080/internal/shops/1/aftersales/1051/serviceorders
 Content-Type: application/json
 
 {
-  "type": 1,
+  "serviceType": 1,
   "consignee": {
     "name": "李四",
     "mobile": "13900139000",
@@ -58,7 +58,7 @@ POST http://119.3.163.139:8080/internal/shops/1/aftersales/123/serviceorders
 Content-Type: application/json
 
 {
-  "type": 2,
+  "serviceType": 2,
   "consignee": {
     "name": "王五",
     "mobile": "13700137000",
