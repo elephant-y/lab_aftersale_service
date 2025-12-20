@@ -1,0 +1,71 @@
+### 1. 正常提交售后申请（维修类型，orderItemId=1001）
+POST http://116.205.111.229:8080/orderitems/100/aftersales
+Content-Type: application/json
+
+{
+  "type": 2,
+  "quantity": 1,
+  "reason": "手机屏幕碎裂，需要更换屏幕",
+  "consignee": {
+    "name": "张三",
+    "mobile": "13800138000",
+    "regionId": 110101,
+    "address": "北京市朝阳区望京SOHO T3 20层"
+  }
+}
+
+> {%
+    client.test("售后申请提交成功", function() {
+        const json = response.body;
+        client.assert(response.status === 200, "预期状态码200，实际为" + response.status);
+        client.assert(json.errno === 0, "errno应为0，实际为" + json.errno);
+        client.assert(!!json.data, "响应应返回售后单ID");
+    });
+%}
+
+### 2. 测试重复提交（同一orderItemId=2再次提交）
+POST http://116.205.111.229:8080/orderitems/4/aftersales
+Content-Type: application/json
+
+{
+  "type": 1,
+  "quantity": 1,
+  "reason": "重复申请测试",
+  "consignee": {
+    "name": "张三",
+    "mobile": "13800138000"
+  }
+}
+
+> {%
+    client.test("重复提交校验成功", function() {
+        const json = response.body;
+        client.assert(json.errno === 507, "errno应为507（状态不允许），实际为" + json.errno);
+        client.assert(json.errmsg.includes("已提交售后"), "错误提示符合预期");
+    });
+%}
+
+### 3. 测试参数缺失（仅测试 quantity=0，reason 允许为空）
+POST http://116.205.111.229:8080/orderitems/3/aftersales
+Content-Type: application/json
+
+{
+  "type": 2,
+  "quantity": 0,
+  "reason": "",
+  "customerId": 10086,
+  "consignee": {
+    "name": "李四",
+    "mobile": "13900139000",
+    "regionId": 110101,
+    "address": "北京市海淀区中关村"
+  }
+}
+
+> {%
+    client.test("参数缺失校验成功（仅测试quantity=0）", function() {
+        const json = response.body;
+        client.assert(json.errno === 503, "errno应为503（字段不合法），实际为" + json.errno);
+        client.assert(json.errmsg.includes("数量不能小于1"), "错误提示应包含'数量不能小于1'，实际为：" + json.errmsg);
+    });
+%}

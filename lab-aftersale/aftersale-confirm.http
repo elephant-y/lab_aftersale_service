@@ -1,21 +1,72 @@
-### 商家确认售后申请（同意）
-PUT http://116.205.111.229:8080/shops/1/aftersales/123/confirm
+### 商家确认售后申请（同意维修类型-上门服务）
+PUT http://116.205.111.229:8080/shops/1/aftersales/1053/confirm
 Content-Type: application/json
-
 
 {
   "confirm": true,
-  "conclusion": "jladsjladsakdalsd",
+  "conclusion": "审核通过，上门维修",
+  "type": 2,
+  "serviceType": 0
+}
+
+### 商家确认售后申请（同意维修类型-寄件服务）
+PUT http://116.205.111.229:8080/shops/1/aftersales/1011/confirm
+Content-Type: application/json
+
+{
+  "confirm": true,
+  "conclusion": "审核通过，寄件维修",
+  "type": 2,
+  "serviceType": 1
+}
+
+### 商家确认售后申请（拒绝维修类型）
+PUT http://116.205.111.229:8080/shops/2/aftersales/1010/confirm
+Content-Type: application/json
+
+{
+  "confirm": false,
+  "conclusion": "超出维修范围，拒绝申请",
   "type": 2
 }
 
-### 商家确认售后申请（拒绝）
-PUT http://localhost:8080/shops/1/aftersales/456/confirm
+### 商家确认售后申请（拒绝-退货类型，无需改动）
+PUT http://116.205.111.229:8080/shops/1/aftersales/1002/confirm
 Content-Type: application/json
-
 
 {
   "confirm": false,
   "conclusion": "商品无质量问题，不支持无理由退货",
   "type": 0
+}
+
+### 商家确认售后申请（同意-换货类型，无需serviceType）
+PUT http://116.205.111.229:8080/shops/1/aftersales/1003/confirm
+Content-Type: application/json
+
+{
+  "confirm": true,
+  "conclusion": "审核通过，支持换货",
+  "type": 1
+}
+
+### 【异常测试】同意维修类型但未传serviceType（验证参数校验）
+PUT http://116.205.111.229:8080/shops/2/aftersales/1010/confirm
+Content-Type: application/json
+
+{
+  "confirm": true,
+  "conclusion": "审核通过",
+  "type": 2
+}
+
+### 【异常测试】同意维修类型但serviceType非法（验证参数校验）
+PUT http://116.205.111.229:8080/shops/2/aftersales/1010/confirm
+Content-Type: application/json
+
+{
+  "confirm": true,
+  "conclusion": "审核通过",
+  "type": 2,
+  "serviceType": 3
 }

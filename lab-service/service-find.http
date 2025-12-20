@@ -1,0 +1,68 @@
+### 按商户ID查询服务单（正常场景）
+GET http://119.3.163.139:8080/internal/shops/1/serviceorders/24
+
+> {%
+    client.test("查询服务单成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+        client.assert(typeof json.data === 'object' && json.data.id, "返回应为服务单对象");
+    });
+%}
+
+### 测试服务单不存在场景
+GET http://119.3.163.139:8080/internal/shops/2/serviceorders/9999
+
+> {%
+    client.test("服务单不存在返回错误", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 504, "errno应为504（资源不存在）");
+    });
+%}
+
+### 按服务商ID查询服务单（正常场景）
+GET http://119.3.163.139:8080/internal/maintainers/1/serviceorders/24
+
+> {%
+    client.test("查询服务单成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+        client.assert(typeof json.data === 'object' && json.data.id, "返回应为服务单对象");
+    });
+%}
+
+### 按ID查询维修人员
+GET http://119.3.163.139:8080/internal/maintainers/1
+
+> {%
+    client.test("查询维修人员成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+    });
+%}
+
+### 查询可分配的服务合同（返回单条）
+GET http://119.3.163.139:8080/internal/shops/1/service-contracts/assign/110100/0
+
+> {%
+    client.test("查询可分配服务合同成功", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 0, "errno错误");
+        client.assert(typeof json.data === 'object' && json.data.id, "返回应为单个合同对象");
+    });
+%}
+
+### 测试无匹配的场景
+GET http://119.3.163.139:8080/internal/shops/999/service-contracts/assign/0/999
+
+> {%
+    client.test("无匹配合同返回错误", function() {
+        client.assert(response.status === 200, "状态码错误");
+        var json = JSON.parse(response.body);
+        client.assert(json.errno === 504, "errno应为504（资源不存在）");
+    });
+%}

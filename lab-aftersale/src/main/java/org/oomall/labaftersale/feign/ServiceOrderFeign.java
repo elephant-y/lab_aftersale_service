@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface ServiceOrderFeign {
 
     @PostMapping("/internal/shops/{shopId}/aftersales/{id}/serviceorders")
-    ReturnObject createServiceOrder(@PathVariable Long shopId,
-                                    @PathVariable Long id,@RequestBody AftersaleConfirmVo vo);
+    ReturnObject createServiceOrder(
+            @PathVariable Long shopId,
+            @PathVariable Long id,
+            @RequestBody AftersaleConfirmVo vo);
 }
