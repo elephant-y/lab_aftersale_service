@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MaintainerRepository extends JpaRepository<MaintainerPo, Long> {
-    // JPA自带 findById(Long id) 方法，无需自定义
+
 }

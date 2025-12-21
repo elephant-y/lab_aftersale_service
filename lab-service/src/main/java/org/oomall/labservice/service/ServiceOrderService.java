@@ -126,7 +126,7 @@ public class ServiceOrderService {
             serviceOrder.setStatus(ServiceOrderStatus.ASSIGNED.ordinal());
 
             // 7. 保存更新
-            serviceOrderDao.insert(serviceOrder); // 假设insert方法兼容更新（JPA的save方法支持）
+            serviceOrderDao.insert(serviceOrder);
             log.info("【服务模块】服务单分配成功，serviceOrderId={}, maintainerId={}", id, maintainer.getId());
 
             return new ReturnObject(ReturnNo.OK, serviceOrder);
