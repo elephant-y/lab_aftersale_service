@@ -12,7 +12,7 @@ public class MaintainerDao {
 
     // 仅实现：按ID查询维修人员
     public MaintainerPo findById(Long id) {
-        // orElse(null)：查询不到返回null，和你现有代码风格一致
+        // orElse(null)：查询不到返回null
         return maintainerRepository.findById(id).orElse(null);
     }
 }
