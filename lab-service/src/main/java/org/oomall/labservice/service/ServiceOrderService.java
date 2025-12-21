@@ -8,14 +8,13 @@ import org.oomall.labservice.mapper.Po.MaintainerPo;
 import org.oomall.labservice.mapper.Po.ServiceContractPo;
 import org.oomall.labservice.model.*;
 import org.oomall.labservice.controller.dto.ServiceOrderDto;
-
 import org.oomall.labservice.dao.ServiceOrderDao;
 import org.oomall.labservice.feign.AftersaleFeign;
 import org.oomall.labservice.feign.dto.AftersaleDto;
 import org.oomall.labservice.feign.po.AftersalePo;
 import org.oomall.labservice.mapper.Po.ServiceOrderPo;
-
 import org.oomall.labservice.service.vo.ServiceOrderVo;
+
 import org.springframework.stereotype.Service;
 
 
@@ -138,6 +137,63 @@ public class ServiceOrderService {
     }
 
     /**
+     * 维修人员接受服务单
+     * @param maintainerId 维修人员ID
+     * @param id 服务单ID
+     * @return 处理结果
+     */
+    public ReturnObject acceptServiceOrder(Long maintainerId, Long id) {
+        try {
+            // 1. 查询服务单信息（验证归属关系）
+            ServiceOrderPo serviceOrder = findServiceOrderByMaintainerId(maintainerId, id);
+            if (serviceOrder == null) {
+                log.error("【服务模块】服务单不存在或不属于该维修人员，serviceOrderId={}, maintainerId={}", id, maintainerId);
+                return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
+            }
+
+            // 2. 校验服务单当前状态是否为已派单
+            if (serviceOrder.getStatus() != ServiceOrderStatus.ASSIGNED.ordinal()) {
+                log.error("【服务模块】服务单状态不允许接受，当前状态={}, serviceOrderId={}",
+                        serviceOrder.getStatus(), id);
+                return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
+            }
+
+            // 3. 获取服务单类型
+            Integer serviceType = serviceOrder.getServiceType();
+            ServiceOrderType orderType;
+            try {
+                orderType = ServiceOrderType.values()[serviceType];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                log.error("【服务模块】服务单类型不合法，serviceType={}, serviceOrderId={}", serviceType, id);
+                return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR);
+            }
+
+            // 4. 根据服务类型创建对应服务实例并执行
+            FatherService service;
+            if (ServiceOrderType.SITEMENT.equals(orderType)) {
+                service = new SiteService(serviceOrder);
+            } else if (ServiceOrderType.SHIPMENT.equals(orderType)) {
+                service = new ShipService(serviceOrder);
+            } else {
+                log.error("【服务模块】不支持的服务类型，serviceType={}, serviceOrderId={}", serviceType, id);
+                return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR);
+            }
+
+            // 执行公共逻辑（状态改为ACCEPTED）和子类特有逻辑
+            service.execute();
+
+            // 5. 保存更新
+            serviceOrderDao.insert(serviceOrder);
+            log.info("【服务模块】服务单接受成功，serviceOrderId={}, maintainerId={}", id, maintainerId);
+
+            return new ReturnObject(ReturnNo.OK, serviceOrder);
+        } catch (Exception e) {
+            log.error("【服务模块】接受服务单异常，serviceOrderId={}, maintainerId={}", id, maintainerId, e);
+            return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
+        }
+    }
+
+    /**
      * 维修人员拒绝服务单
      * @param maintainerId 维修人员ID
      * @param id 服务单ID
@@ -169,6 +225,83 @@ public class ServiceOrderService {
             return new ReturnObject(ReturnNo.OK, serviceOrder);
         } catch (Exception e) {
             log.error("【服务模块】拒绝服务单异常，serviceOrderId={}, maintainerId={}", id, maintainerId, e);
+            return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
+        }
+    }
+
+    /**
+     * 维修人员接收产品（寄件服务）
+     */
+    public ReturnObject receiveProduct(Long maintainerId, Long orderId) {
+        try {
+            // 1. 校验服务单归属和存在性
+            ServiceOrderPo serviceOrder = findServiceOrderByMaintainerId(maintainerId, orderId);
+            if (serviceOrder == null) {
+                log.error("【服务模块】服务单不存在或不属于该维修人员，serviceOrderId={}, maintainerId={}", orderId, maintainerId);
+                return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
+            }
+
+            // 2. 校验服务类型是否为寄件
+            Integer serviceType = serviceOrder.getServiceType();
+            if (serviceType == null || !ServiceOrderType.SHIPMENT.equals(ServiceOrderType.values()[serviceType])) {
+                log.error("【服务模块】非寄件服务单不支持接收产品，serviceOrderId={}", orderId);
+                return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR);
+            }
+
+            // 3. 校验当前状态是否允许接收（必须是已接单状态）
+            if (serviceOrder.getStatus() != ServiceOrderStatus.ACCEPTED.ordinal()) {
+                log.error("【服务模块】服务单状态不允许接收产品，当前状态={}, serviceOrderId={}", serviceOrder.getStatus(), orderId);
+                return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
+            }
+
+            // 4. 执行接收产品逻辑（更新状态为已签收）
+            serviceOrder.setStatus(ServiceOrderStatus.RECEIVED.ordinal());
+            serviceOrderDao.insert(serviceOrder); // 保存更新
+            log.info("【寄件服务】产品已签收，serviceOrderId={}", orderId);
+
+            return new ReturnObject(ReturnNo.OK, serviceOrder);
+        } catch (Exception e) {
+            log.error("【服务模块】接收产品异常，serviceOrderId={}, maintainerId={}", orderId, maintainerId, e);
+            return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
+        }
+    }
+
+    /**
+     * 维修人员发送产品（寄件服务）
+     */
+    public ReturnObject sendProduct(Long maintainerId, Long orderId) {
+        try {
+            // 1. 校验服务单归属和存在性
+            ServiceOrderPo serviceOrder = findServiceOrderByMaintainerId(maintainerId, orderId);
+            if (serviceOrder == null) {
+                log.error("【服务模块】服务单不存在或不属于该维修人员，serviceOrderId={}, maintainerId={}", orderId, maintainerId);
+                return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
+            }
+
+            // 2. 校验服务类型是否为寄件
+            Integer serviceType = serviceOrder.getServiceType();
+            if (serviceType == null || !ServiceOrderType.SHIPMENT.equals(ServiceOrderType.values()[serviceType])) {
+                log.error("【服务模块】非寄件服务单不支持发送产品，serviceOrderId={}", orderId);
+                return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR);
+            }
+
+            // 3. 校验当前状态是否允许发送（必须是已签收状态）
+            if (serviceOrder.getStatus() != ServiceOrderStatus.RECEIVED.ordinal()) {
+                log.error("【服务模块】服务单状态不允许发送产品，当前状态={}, serviceOrderId={}", serviceOrder.getStatus(), orderId);
+                return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
+            }
+
+            // 4. 执行发送产品逻辑（这里仅做日志示例，实际可补充物流对接等逻辑）
+            log.info("【寄件服务】准备从[{}]发送到[{}]，serviceOrderId={}",
+                    serviceOrder.getMaintainerAddress(), serviceOrder.getConsigneeAddress(), orderId);
+
+            // 5. 更新服务单状态为已发货
+            serviceOrder.setStatus(ServiceOrderStatus.SENT.ordinal());
+            serviceOrderDao.insert(serviceOrder);
+
+            return new ReturnObject(ReturnNo.OK, serviceOrder);
+        } catch (Exception e) {
+            log.error("【服务模块】发送产品异常，serviceOrderId={}, maintainerId={}", orderId, maintainerId, e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
         }
     }
@@ -208,7 +341,7 @@ public class ServiceOrderService {
                 canFinish = currentStatus == ServiceOrderStatus.ACCEPTED.ordinal();
             } else if (ServiceOrderType.SHIPMENT.equals(orderType)) {
                 // 寄件服务需处于已签收状态
-                canFinish = currentStatus == ServiceOrderStatus.RECEIVED.ordinal();
+                canFinish = currentStatus == ServiceOrderStatus.SENT.ordinal();
             } else {
                 // 其他服务类型不支持完成操作
                 log.error("【服务模块】服务单类型不支持完成操作，serviceType={}, serviceOrderId={}", serviceType, id);

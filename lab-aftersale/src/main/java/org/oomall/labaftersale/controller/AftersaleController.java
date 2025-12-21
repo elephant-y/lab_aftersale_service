@@ -8,6 +8,7 @@ import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
 import org.oomall.labaftersale.mapper.po.AftersalePo;
 import org.oomall.labaftersale.controller.dto.AftersaleDto;
 import org.oomall.labaftersale.controller.dto.AftersaleApplyDto;
+import org.oomall.labaftersale.model.AftersaleStatus;
 import org.oomall.labaftersale.model.ReturnNo;
 import org.oomall.labaftersale.model.ReturnObject;
 import org.oomall.labaftersale.service.AftersaleService;
@@ -55,5 +56,14 @@ public class AftersaleController {
     ) {
         log.info("【售后模块】顾客提交售后申请，orderItemId={}, 参数={}", orderItemId, applyDto);
         return aftersaleService.createAftersale(orderItemId, applyDto);
+    }
+
+    @PutMapping("/shops/{shopId}/aftersales/{id}/status")
+    public ReturnObject updateAftersaleStatus(
+            @PathVariable Long shopId,
+            @PathVariable Long id,
+            @RequestParam AftersaleStatus status) { // 接收状态参数（枚举类型）
+        log.info("【售后模块】更新售后单状态，shopId={}, aftersaleId={}, 目标状态={}", shopId, id, status);
+        return aftersaleService.updateAftersaleStatus(shopId, id, status);
     }
 }

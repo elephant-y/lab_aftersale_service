@@ -1,5 +1,5 @@
 ### 维修人员拒绝服务单（正常场景）
-POST http://119.3.163.139:8080/internal/maintainers/2/serviceorders/24/reject
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/24/reject
 Content-Type: application/json
 
 {
@@ -8,7 +8,7 @@ Content-Type: application/json
 }
 
 ### 维修人员拒绝服务单（状态错误场景）
-POST http://119.3.163.139:8080/internal/maintainers/1001/serviceorders/2002/reject
+POST http://119.3.163.139:8080/maintainers/1001/serviceorders/2002/reject
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 }
 
 ### 维修人员拒绝服务单（服务单不存在）
-POST http://119.3.163.139:8080/internal/maintainers/1001/serviceorders/9999/reject
+POST http://119.3.163.139:8080/maintainers/1001/serviceorders/9999/reject
 Content-Type: application/json
 
 {

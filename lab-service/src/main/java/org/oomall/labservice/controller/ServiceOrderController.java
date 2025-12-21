@@ -120,12 +120,26 @@ public class ServiceOrderController {
     }
 
     /**
+     * 维修人员接受服务单
+     * @param maintainerId 维修人员ID
+     * @param orderId 服务单ID
+     * @return 处理结果
+     */
+    @PostMapping("/maintainers/{maintainerId}/serviceorders/{orderId}/accept")
+    public ReturnObject acceptServiceOrder(
+            @PathVariable("maintainerId") Long maintainerId,
+            @PathVariable("orderId") Long orderId) {
+        log.info("【服务模块】维修人员接受服务单请求，maintainerId={}, serviceOrderId={}", maintainerId, orderId);
+        return serviceOrderService.acceptServiceOrder(maintainerId, orderId);
+    }
+
+    /**
      * 维修人员拒绝服务单
      * @param maintainerId 维修人员ID
      * @param orderId 服务单ID
      * @return 处理结果
      */
-    @PostMapping("/internal/maintainers/{maintainerId}/serviceorders/{orderId}/reject")
+    @PostMapping("/maintainers/{maintainerId}/serviceorders/{orderId}/reject")
     public ReturnObject refuseServiceOrder(
             @PathVariable("maintainerId") Long maintainerId,
             @PathVariable("orderId") Long orderId) {
@@ -134,12 +148,40 @@ public class ServiceOrderController {
     }
 
     /**
+     * 维修人员接收产品（寄件服务）
+     * @param maintainerId 维修人员ID
+     * @param orderId 服务单ID
+     * @return 处理结果
+     */
+    @PostMapping("/maintainers/{maintainerId}/serviceorders/{orderId}/receive")
+    public ReturnObject receiveProduct(
+            @PathVariable("maintainerId") Long maintainerId,
+            @PathVariable("orderId") Long orderId) {
+        log.info("【服务模块】维修人员接收产品请求，maintainerId={}, serviceOrderId={}", maintainerId, orderId);
+        return serviceOrderService.receiveProduct(maintainerId, orderId);
+    }
+
+    /**
+     * 维修人员发送产品（寄件服务）
+     * @param maintainerId 维修人员ID
+     * @param orderId 服务单ID
+     * @return 处理结果
+     */
+    @PostMapping("/maintainers/{maintainerId}/serviceorders/{orderId}/send")
+    public ReturnObject sendProduct(
+            @PathVariable("maintainerId") Long maintainerId,
+            @PathVariable("orderId") Long orderId) {
+        log.info("【服务模块】维修人员发送产品请求，maintainerId={}, serviceOrderId={}", maintainerId, orderId);
+        return serviceOrderService.sendProduct(maintainerId, orderId);
+    }
+
+    /**
      * 维修人员完成服务单
      * @param maintainerId 维修人员ID
      * @param orderId 服务单ID
      * @return 处理结果
      */
-    @PostMapping("/internal/maintainers/{maintainerId}/serviceorders/{orderId}/finish")
+    @PostMapping("/maintainers/{maintainerId}/serviceorders/{orderId}/finish")
     public ReturnObject finishServiceOrder(
             @PathVariable("maintainerId") Long maintainerId,
             @PathVariable("orderId") Long orderId) {

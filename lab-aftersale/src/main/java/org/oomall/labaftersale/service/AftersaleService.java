@@ -233,7 +233,45 @@ public class AftersaleService {
                 log.info("【售后模块】审核通过售后单id={}, 创建服务单成功，服务单id={}", po.getId(), po.getServiceOrderId());
             }
         }
+    }
 
+    /**
+     * 更新售后单状态
+     */
+    public ReturnObject updateAftersaleStatus(Long shopId, Long id, AftersaleStatus status) {
+        // 1. 查询售后单是否存在且属于当前店铺
+        AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
+        if (po == null) {
+            log.error("【售后模块】更新状态失败：售后单不存在或不属于当前商户，shopId={}, aftersaleId={}", shopId, id);
+            return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST, "售后单不存在或不属于当前商户");
+        }
+
+        // 2. 校验状态转换是否合法
+        if (!isStatusTransitionValid(po.getStatus(), status)) {
+            log.error("【售后模块】更新状态失败：状态转换不合法，当前状态={}, 目标状态={}, aftersaleId={}",
+                    po.getStatus(), status, id);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW, "当前状态不允许转换为目标状态");
+        }
+
+        // 3. 更新状态和修改时间
+        po.setStatus(status);
+        po.setGmtModified(LocalDateTime.now());
+        aftersaleDao.save(po);
+
+        log.info("【售后模块】售后单状态更新成功，aftersaleId={}, 新状态={}", id, status);
+        return new ReturnObject(ReturnNo.OK);
+    }
+
+    /**
+     * 校验状态转换是否合法
+     */
+    private boolean isStatusTransitionValid(AftersaleStatus currentStatus, AftersaleStatus targetStatus) {
+        // 只有处理中（PROCESSING）可以转为已完成（COMPLETED）
+        if (currentStatus == AftersaleStatus.PROCESSING && targetStatus == AftersaleStatus.COMPLETED) {
+            return true;
+        }
+        // 其他合法转换规则可在此添加
+        return false;
     }
 
 }

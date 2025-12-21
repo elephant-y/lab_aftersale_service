@@ -1,0 +1,17 @@
+### 1. 维修人员接收产品
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/24/receive
+Content-Type: application/json
+
+{
+  "errno": 0,
+  "errmsg": "成功"
+}
+
+### 2. 维修人员发送产品
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/24/send
+Content-Type: application/json
+
+{
+  "errno": 0,
+  "errmsg": "成功"
+}

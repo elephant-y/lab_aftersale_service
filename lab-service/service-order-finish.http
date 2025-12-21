@@ -1,5 +1,14 @@
 ### 成功案例：完成上门服务单（SITEMENT类型，ACCEPTED状态）
-POST http://119.3.163.139:8080/internal/maintainers/2/serviceorders/24/finish
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/24/finish
+Content-Type: application/json
+
+{
+  "errno": 0,
+  "errmsg": "成功"
+}
+
+### 成功案例：完成上门服务单（SHIPMENT类型，SENT状态）
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/24/finish
 Content-Type: application/json
 
 {
@@ -8,7 +17,7 @@ Content-Type: application/json
 }
 
 ### 失败案例1：服务单不存在
-POST http://119.3.163.139:8080/internal/maintainers/1001/serviceorders/9999/finish
+POST http://119.3.163.139:8080/maintainers/1001/serviceorders/9999/finish
 Content-Type: application/json
 
 {
@@ -17,7 +26,7 @@ Content-Type: application/json
 }
 
 ### 失败案例2：状态不允许（上门服务单处于WAITING状态）
-POST http://119.3.163.139:8080/internal/maintainers/1001/serviceorders/2002/finish
+POST http://119.3.163.139:8080/maintainers/1001/serviceorders/2002/finish
 Content-Type: application/json
 
 {
@@ -26,7 +35,7 @@ Content-Type: application/json
 }
 
 ### 失败案例3：服务类型不支持（非SITEMENT/SHIPMENT类型）
-POST http://119.3.163.139:8080/internal/maintainers/1001/serviceorders/2003/finish
+POST http://119.3.163.139:8080/maintainers/1001/serviceorders/2003/finish
 Content-Type: application/json
 
 {

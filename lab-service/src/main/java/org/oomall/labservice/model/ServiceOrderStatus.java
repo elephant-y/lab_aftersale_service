@@ -9,6 +9,7 @@ public enum ServiceOrderStatus {
     ACCEPTED, // 已接单
     REJECTED, // 已拒单
     RECEIVED, // 已签收
+    SENT,     // 已发货
     FINISHED; // 已完成
 
     @JsonValue
