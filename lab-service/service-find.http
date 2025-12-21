@@ -22,7 +22,7 @@ GET http://119.3.163.139:8080/internal/shops/2/serviceorders/9999
 %}
 
 ### 按服务商ID查询服务单（正常场景）
-GET http://119.3.163.139:8080/internal/maintainers/1/serviceorders/24
+GET http://119.3.163.139:8080/internal/maintainers/2/serviceorders/24
 
 > {%
     client.test("查询服务单成功", function() {

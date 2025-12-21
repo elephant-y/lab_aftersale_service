@@ -1,5 +1,5 @@
 ### 1. 正常提交售后申请（维修类型，orderItemId=1001）
-POST http://116.205.111.229:8080/orderitems/100/aftersales
+POST http://116.205.111.229:8080/orderitems/99/aftersales
 Content-Type: application/json
 
 {

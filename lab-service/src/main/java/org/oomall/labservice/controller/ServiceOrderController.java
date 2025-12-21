@@ -71,7 +71,7 @@ public class ServiceOrderController {
         return new ReturnObject(vo);
     }
 
-    @GetMapping("/internal/serviceorders/{orderId}/maintainers/{maintainerId}")
+    @GetMapping("/internal/maintainers/{maintainerId}/serviceorders/{orderId}/")
     public ReturnObject getServiceOrderByMaintainer(
             @PathVariable("orderId") Long orderId,
             @PathVariable("maintainerId") Long maintainerId) {

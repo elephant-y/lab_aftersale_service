@@ -49,6 +49,7 @@ public class ServiceOrderService {
         }
 
         ServiceOrderPo po = new ServiceOrderPo();
+
         po.setShopId(shopId);
         po.setAftersaleId(aftersaleId);
         po.setServiceType(vo.getServiceType());

@@ -1,5 +1,5 @@
 ### 创建服务单 - 上门维修
-POST http://119.3.163.139:8080/internal/shops/3/aftersales/2005/serviceorders
+POST http://119.3.163.139:8080/internal/shops/2/aftersales/1006/serviceorders
 Content-Type: application/json
 
 {
