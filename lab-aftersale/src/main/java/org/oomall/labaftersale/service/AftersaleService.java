@@ -77,7 +77,6 @@ public class AftersaleService {
     private AftersaleResponseDto convertToResponseDto(AftersalePo po) {
         AftersaleResponseDto dto = new AftersaleResponseDto();
         dto.setId(po.getId());
-        dto.setCustomerId(po.getCustomerId());
         dto.setOrderItemId(po.getOrderItemId());
         dto.setShopId(po.getShopId());
         dto.setType(po.getType());
@@ -144,7 +143,6 @@ public class AftersaleService {
         // 5. 构造售后单Po（状态=APPLIED）
         AftersalePo aftersalePo = new AftersalePo();
         aftersalePo.setOrderItemId(orderItemId); // 关联订单商品ID
-        aftersalePo.setCustomerId(1L);
         aftersalePo.setShopId(1L); // 若有店铺ID来源（如从订单商品查询）可替换，暂无则默认1
         aftersalePo.setStatus(AftersaleStatus.APPLIED); // 初始状态：申请中
         aftersalePo.setType(AftersaleType.fromInt(applyDto.getType())); // 转换为AftersaleType枚举
