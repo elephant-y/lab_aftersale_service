@@ -24,25 +24,16 @@ import java.util.Map;
 public class AftersaleController {
     private final AftersaleService aftersaleService;
 
-    @PutMapping("/shops/{shopId}/aftersales/{id}/confirm")
-    public ReturnObject confirmAftersale(
-            @PathVariable Long shopId,
-            @PathVariable Long id,
-            @RequestBody AftersaleDto vo) {
-        log.info("【售后模块】审核请求 shopId={}, aftersaleId={}, confirm={}", shopId, id, vo);
-        return aftersaleService.confirmAftersale(shopId, id, vo);
-    }
-
     @GetMapping("/shops/{shopId}/aftersales/{id}")
-    public ReturnObject getAftersale(
+    public ReturnObject findAftersaleByShopId(
             @PathVariable Long shopId,
             @PathVariable Long id) {
         log.info("【售后模块】商户查询售后信息，shopId={}, aftersaleId={}", shopId, id);
-        AftersaleResponseDto dto = aftersaleService.getAftersale(shopId, id);
+        AftersaleResponseDto dto = aftersaleService.findAftersaleByShopId(shopId, id);
         if (dto == null) {
             return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST, "售后单不存在或不属于当前商户");
         }
-        return new ReturnObject(ReturnNo.OK, aftersaleService.getAftersale(shopId, id));
+        return new ReturnObject(ReturnNo.OK, aftersaleService.findAftersaleByShopId(shopId, id));
     }
 
     /**
@@ -56,6 +47,15 @@ public class AftersaleController {
     ) {
         log.info("【售后模块】顾客提交售后申请，orderItemId={}, 参数={}", orderItemId, applyDto);
         return aftersaleService.createAftersale(orderItemId, applyDto);
+    }
+
+    @PutMapping("/shops/{shopId}/aftersales/{id}/confirm")
+    public ReturnObject confirmAftersale(
+            @PathVariable Long shopId,
+            @PathVariable Long id,
+            @RequestBody AftersaleDto vo) {
+        log.info("【售后模块】审核请求 shopId={}, aftersaleId={}, confirm={}", shopId, id, vo);
+        return aftersaleService.confirmAftersale(shopId, id, vo);
     }
 
     @PutMapping("/shops/{shopId}/aftersales/{id}/status")

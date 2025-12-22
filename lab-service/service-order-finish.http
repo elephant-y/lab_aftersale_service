@@ -8,7 +8,7 @@ Content-Type: application/json
 }
 
 ### 成功案例：完成上门服务单（SHIPMENT类型，SENT状态）
-POST http://119.3.163.139:8080/maintainers/2/serviceorders/24/finish
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/44/finish
 Content-Type: application/json
 
 {

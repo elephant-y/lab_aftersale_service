@@ -1,5 +1,5 @@
 # 商户分配服务单
-POST http://119.3.163.139:8080/shops/1/serviceorders/24/assign
+POST http://119.3.163.139:8080/shops/1/serviceorders/44/assign
 Content-Type: application/json
 
 > {%

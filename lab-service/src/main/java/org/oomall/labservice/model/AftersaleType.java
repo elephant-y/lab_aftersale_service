@@ -2,9 +2,9 @@ package org.oomall.labservice.model;
 
 
 public enum AftersaleType {
-    RETURN,   // 退货
-    EXCHANGE, // 换货
-    REPAIR;    // 维修
+    REFUNDONLY, // 仅退款
+    RETURN,     // 退货退款
+    REPAIR;     // 维修
 
 
 }
