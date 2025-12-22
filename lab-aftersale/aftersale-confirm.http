@@ -10,7 +10,7 @@ Content-Type: application/json
 }
 
 ### 商家确认售后申请（同意维修类型-寄件服务）
-PUT http://116.205.111.229:8080/shops/1/aftersales/1011/confirm
+PUT http://116.205.111.229:8080/shops/1/aftersales/1057/confirm
 Content-Type: application/json
 
 {
@@ -30,23 +30,23 @@ Content-Type: application/json
   "type": 2
 }
 
-### 商家确认售后申请（拒绝-退货类型，无需改动）
-PUT http://116.205.111.229:8080/shops/1/aftersales/1002/confirm
+### 商家确认售后申请（拒绝-退款类型，无需改动）
+PUT http://116.205.111.229:8080/shops/1/aftersales/1057/confirm
 Content-Type: application/json
 
 {
   "confirm": false,
-  "conclusion": "商品无质量问题，不支持无理由退货",
+  "conclusion": "商品无质量问题，不支持无理由退款",
   "type": 0
 }
 
-### 商家确认售后申请（同意-换货类型，无需serviceType）
+### 商家确认售后申请（同意-退货类型，无需serviceType）
 PUT http://116.205.111.229:8080/shops/1/aftersales/1003/confirm
 Content-Type: application/json
 
 {
   "confirm": true,
-  "conclusion": "审核通过，支持换货",
+  "conclusion": "审核通过，支持退货",
   "type": 1
 }
 

@@ -17,6 +17,8 @@ import org.oomall.labservice.service.vo.ServiceOrderVo;
 
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 
 @Slf4j
 @RequiredArgsConstructor
@@ -39,7 +41,7 @@ public class ServiceOrderService {
 
     public ReturnObject createServiceOrder(Long shopId, Long aftersaleId, ServiceOrderDto vo) {
 
-        AftersalePo aftersale = aftersaleFeign.getAftersale(shopId, aftersaleId);
+        AftersalePo aftersale = aftersaleFeign.findAftersaleByShopId(shopId, aftersaleId);
         if (aftersale == null) {
             return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
         }
@@ -57,6 +59,8 @@ public class ServiceOrderService {
         po.setConsigneeMobile(vo.getConsignee().getMobile());
         po.setConsigneeRegionId(vo.getConsignee().getRegionId());
         po.setConsigneeAddress(vo.getConsignee().getAddress());
+        po.setGmtCreate(LocalDateTime.now());
+        po.setGmtModified(LocalDateTime.now());
 
         try {
             serviceOrderDao.insert(po);

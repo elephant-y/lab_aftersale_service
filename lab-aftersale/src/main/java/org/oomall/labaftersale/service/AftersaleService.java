@@ -14,6 +14,7 @@ import org.oomall.labaftersale.model.AftersaleType;
 import org.oomall.labaftersale.model.ReturnNo;
 import org.oomall.labaftersale.model.ReturnObject;
 import org.oomall.labaftersale.service.vo.AftersaleConfirmVo;
+import org.oomall.labaftersale.service.AftersaleHandler;
 import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
 import org.oomall.labaftersale.model.ServiceOrderType;
 import org.springframework.stereotype.Service;
@@ -31,41 +32,7 @@ public class AftersaleService {
     private final AftersaleDao aftersaleDao;
     private final ServiceOrderFeign serviceOrderFeign;
 
-    @Transactional
-    public ReturnObject confirmAftersale(Long shopId, Long id, AftersaleDto dto) {
-        // 参数校验
-        if (dto == null ) {
-            return new ReturnObject(ReturnNo.FIELD_NOTVALID);
-        }
-
-        // 查询售后单
-        AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
-        if (po == null) {
-            return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
-        }
-
-        // 状态校验
-        if (!AftersaleStatus.APPLIED.equals(po.getStatus())) {
-            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
-        }
-
-        if (dto.isConfirm() && AftersaleType.fromInt(dto.getType()) == AftersaleType.REPAIR) {
-            if (dto.getServiceType() == null || (ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SITEMENT && ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SHIPMENT)) {
-                return new ReturnObject(ReturnNo.FIELD_NOTVALID, "服务单类型必须为0（上门）或1（寄件）");
-            }
-        }
-
-        // 处理审核结果
-        handleAftersaleReview(po, dto, shopId);
-        po.setGmtModified(LocalDateTime.now()); // 更新修改时间
-
-        // 保存更新后的售后单
-        aftersaleDao.save(po);
-
-        return new ReturnObject(ReturnNo.OK);
-    }
-
-    public AftersaleResponseDto getAftersale(Long shopId, Long id) {
+    public AftersaleResponseDto findAftersaleByShopId(Long shopId, Long id) {
         AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
         if (po == null) {
             return null;
@@ -73,34 +40,8 @@ public class AftersaleService {
         return convertToResponseDto(po); // 转换Po为DTO
     }
 
-    // 实体转DTO的方法
-    private AftersaleResponseDto convertToResponseDto(AftersalePo po) {
-        AftersaleResponseDto dto = new AftersaleResponseDto();
-        dto.setId(po.getId());
-        dto.setCustomerId(po.getCustomerId());
-        dto.setOrderItemId(po.getOrderItemId());
-        dto.setShopId(po.getShopId());
-        dto.setType(po.getType());
-        dto.setStatus(po.getStatus());
-        dto.setConclusion(po.getConclusion());
-        dto.setQuantity(po.getQuantity());
-        dto.setServiceOrderId(po.getServiceOrderId());
-        dto.setGmtCreate(po.getGmtCreate());
-        dto.setGmtModified(po.getGmtModified());
-
-        // 封装收件人信息为Consignee对象
-        Consignee consignee = new Consignee();
-        consignee.setName(po.getConsigneeName());
-        consignee.setMobile(po.getConsigneeMobile());
-        consignee.setRegionId(po.getConsigneeRegionId());
-        consignee.setAddress(po.getConsigneeAddress());
-        dto.setConsignee(consignee);
-
-        return dto;
-    }
-
     /**
-     * 顾客提交售后申请，创建售后单（状态=APPLY）
+     * 顾客提交售后申请，创建售后单（状态=APPLIED）
      * @param orderItemId 订单商品ID（PATH参数）
      * @param applyDto 请求体参数
      */
@@ -162,7 +103,7 @@ public class AftersaleService {
         // 6. 入库保存
         try {
             aftersaleDao.save(aftersalePo);
-            log.info("【售后模块】售后单创建成功，orderItemId={}, 售后单ID={}, 状态=APPLY",
+            log.info("【售后模块】售后单创建成功，orderItemId={}, 售后单ID={}, 状态=APPLIED",
                     orderItemId, aftersalePo.getId());
         } catch (Exception e) {
             log.error("【售后模块】创建售后单入库失败，orderItemId={}", orderItemId, e);
@@ -171,6 +112,39 @@ public class AftersaleService {
 
         // 7. 返回结果（包含售后单ID）
         return new ReturnObject(aftersalePo.getId());
+    }
+
+    @Transactional
+    public ReturnObject confirmAftersale(Long shopId, Long id, AftersaleDto dto) {
+        // 参数校验
+        if (dto == null ) {
+            return new ReturnObject(ReturnNo.FIELD_NOTVALID);
+        }
+
+        // 查询售后单
+        AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
+        if (po == null) {
+            return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
+        }
+
+        // 状态校验
+        if (!AftersaleStatus.APPLIED.equals(po.getStatus())) {
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
+        }
+        if (dto.isConfirm() && AftersaleType.fromInt(dto.getType()) == AftersaleType.REPAIR) {
+            if (dto.getServiceType() == null || (ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SITEMENT && ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SHIPMENT)) {
+                return new ReturnObject(ReturnNo.FIELD_NOTVALID, "服务单类型必须为0（上门）或1（寄件）");
+            }
+        }
+
+        // 处理审核结果
+        handleAftersaleReview(po, dto, shopId);
+        po.setGmtModified(LocalDateTime.now()); // 更新修改时间
+
+        // 保存更新后的售后单
+        aftersaleDao.save(po);
+
+        return new ReturnObject(ReturnNo.OK);
     }
 
     /**
@@ -213,25 +187,33 @@ public class AftersaleService {
      * 处理审核通过
      */
     private void handleApproveReview(AftersalePo po, AftersaleConfirmVo vo, Long shopId) {
-        po.setStatus(AftersaleStatus.PROCESSING);
         // 设置售后类型
         po.setType(AftersaleType.fromInt(vo.getType()));
 
-        // 创建服务单（仅维修类型）
-        if (AftersaleType.fromInt(vo.getType()) == AftersaleType.REPAIR) { // 2代表维修类型
-            ReturnObject ret = serviceOrderFeign.createServiceOrder(shopId, po.getId(), vo);
+        // 根据售后类型获取对应的处理器
+        AftersaleHandler handler = createHandler(shopId, po, vo);
+        // 执行处理逻辑
+        handler.execute();
+    }
 
-            if (ret.getErrno() != ReturnNo.OK.getErrNo()) {
-                log.error("【售后模块】服务单创建失败，errno={}, 售后单id={}", ret.getErrno(), po.getId());
-                throw new RuntimeException(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getMessage());
-            }
+    /**
+     * 创建对应的处理器
+     */
+    private AftersaleHandler createHandler(Long shopId, AftersalePo po, AftersaleConfirmVo vo) {
+        AftersaleType type = AftersaleType.fromInt(vo.getType());
+        if (type == null) {
+            throw new IllegalArgumentException("无效的售后类型: " + vo.getType());
+        }
 
-            if (ret.getData() != null) {
-                Map<String, Object> data = (Map<String, Object>) ret.getData();
-                Integer id= (Integer) data.get("id");
-                po.setServiceOrderId(Long.valueOf(id));
-                log.info("【售后模块】审核通过售后单id={}, 创建服务单成功，服务单id={}", po.getId(), po.getServiceOrderId());
-            }
+        switch (type) {
+            case REFUNDONLY:
+                return new RefundOnlyHandler(shopId, po, vo);
+            case RETURN:
+                return new ReturnHandler(shopId, po, vo);
+            case REPAIR:
+                return new RepairHandler(shopId, po, vo, serviceOrderFeign);
+            default:
+                throw new IllegalArgumentException("不支持的售后类型: " + type);
         }
     }
 
@@ -272,6 +254,32 @@ public class AftersaleService {
         }
         // 其他合法转换规则可在此添加
         return false;
+    }
+
+    // 实体转DTO的方法
+    private AftersaleResponseDto convertToResponseDto(AftersalePo po) {
+        AftersaleResponseDto dto = new AftersaleResponseDto();
+        dto.setId(po.getId());
+        dto.setCustomerId(po.getCustomerId());
+        dto.setOrderItemId(po.getOrderItemId());
+        dto.setShopId(po.getShopId());
+        dto.setType(po.getType());
+        dto.setStatus(po.getStatus());
+        dto.setConclusion(po.getConclusion());
+        dto.setQuantity(po.getQuantity());
+        dto.setServiceOrderId(po.getServiceOrderId());
+        dto.setGmtCreate(po.getGmtCreate());
+        dto.setGmtModified(po.getGmtModified());
+
+        // 封装收件人信息为Consignee对象
+        Consignee consignee = new Consignee();
+        consignee.setName(po.getConsigneeName());
+        consignee.setMobile(po.getConsigneeMobile());
+        consignee.setRegionId(po.getConsigneeRegionId());
+        consignee.setAddress(po.getConsigneeAddress());
+        dto.setConsignee(consignee);
+
+        return dto;
     }
 
 }

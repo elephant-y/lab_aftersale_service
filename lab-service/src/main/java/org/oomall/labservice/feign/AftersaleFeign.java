@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface AftersaleFeign {
     // 查询售后单
     @GetMapping("/shops/{shopId}/aftersales/{id}")
-    AftersalePo getAftersale(
+    AftersalePo findAftersaleByShopId(
             @PathVariable("shopId") Long shopId,
             @PathVariable("id")  Long id);
 
