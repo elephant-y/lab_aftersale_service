@@ -15,8 +15,6 @@ public class AftersalePo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_id", nullable = false) // 与表字段名一致，非空
-    private Long customerId;
 
     // 新增：关联订单商品ID（PATH参数order_item_id）
     @Column(name = "order_item_id", nullable = false)
