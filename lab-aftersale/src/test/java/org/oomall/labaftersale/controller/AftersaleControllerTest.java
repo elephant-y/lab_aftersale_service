@@ -83,7 +83,7 @@ class AftersaleControllerTest {
         AftersaleResponseDto responseDto = new AftersaleResponseDto();
         responseDto.setId(aftersaleId);
 
-        when(aftersaleService.getAftersale(shopId, aftersaleId))
+        when(aftersaleService.findAftersaleByShopId(shopId, aftersaleId))
                 .thenReturn(responseDto);
 
         mockMvc.perform(get("/shops/{shopId}/aftersales/{id}", shopId, aftersaleId))
@@ -100,7 +100,7 @@ class AftersaleControllerTest {
         Long shopId = 1L;
         Long aftersaleId = 10L;
 
-        when(aftersaleService.getAftersale(shopId, aftersaleId))
+        when(aftersaleService.findAftersaleByShopId(shopId, aftersaleId))
                 .thenReturn(null);
 
         mockMvc.perform(get("/shops/{shopId}/aftersales/{id}", shopId, aftersaleId))

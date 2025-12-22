@@ -1,5 +1,5 @@
 ### 商家确认售后申请（同意维修类型-上门服务）
-PUT http://116.205.111.229:8080/shops/1/aftersales/1056/confirm
+PUT http://116.205.111.229:8080/shops/1/aftersales/1059/confirm
 Content-Type: application/json
 
 {

@@ -1,5 +1,5 @@
 ### 1. 正常查询（售后单存在且属于当前商户）
-GET http://116.205.111.229:8080/shops/1/aftersales/1057
+GET http://116.205.111.229:8080/shops/1/aftersales/1059
 Accept: application/json
 
 > {%

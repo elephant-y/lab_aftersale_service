@@ -36,10 +36,10 @@ class ServiceOrderControllerTest {
     @MockBean
     private ServiceOrderService serviceOrderService;  // Mock Service 层
 
-    private static final Long SHOP_ID = 100L;
-    private static final Long AFTERSALE_ID = 200L;
-    private static final Long ORDER_ID = 300L;
-    private static final Long MAINTAINER_ID = 400L;
+    private static final Long SHOP_ID = 1L;
+    private static final Long AFTERSALE_ID = 1L;
+    private static final Long ORDER_ID = 10001L;
+    private static final Long MAINTAINER_ID = 2L;
 
     // 构造一个完整的 ServiceOrderPo 用于测试
     private ServiceOrderPo buildServiceOrderPo() {
@@ -118,7 +118,7 @@ class ServiceOrderControllerTest {
         ServiceOrderPo po = buildServiceOrderPo();
         when(serviceOrderService.findServiceOrderByMaintainerId(MAINTAINER_ID, ORDER_ID)).thenReturn(po);
 
-        mockMvc.perform(get("/internal/serviceorders/{orderId}/maintainers/{maintainerId}", ORDER_ID, MAINTAINER_ID))
+        mockMvc.perform(get("/internal/maintainers/{maintainerId}/serviceorders/{orderId}", MAINTAINER_ID, ORDER_ID))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(ORDER_ID.intValue()))
@@ -130,7 +130,7 @@ class ServiceOrderControllerTest {
     void getServiceOrderByMaintainer_shouldReturnNotExist_whenNull() throws Exception {
         when(serviceOrderService.findServiceOrderByMaintainerId(MAINTAINER_ID, ORDER_ID)).thenReturn(null);
 
-        mockMvc.perform(get("/internal/serviceorders/{orderId}/maintainers/{maintainerId}", ORDER_ID, MAINTAINER_ID))
+        mockMvc.perform(get("/internal/maintainers/{maintainerId}/serviceorders/{orderId}", MAINTAINER_ID, ORDER_ID))
                 .andDo(print())
                 .andExpect(jsonPath("$.errno").value(ReturnNo.RESOURCE_ID_NOTEXIST.getErrNo()));
     }

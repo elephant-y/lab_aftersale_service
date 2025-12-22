@@ -60,7 +60,7 @@ class ServiceOrderServiceTest {
         consignee.setAddress("北京");
         dto.setConsignee(consignee);
 
-        when(aftersaleFeign.getAftersale(shopId, aftersaleId))
+        when(aftersaleFeign.findAftersaleByShopId(shopId, aftersaleId))
                 .thenReturn(new AftersalePo());
         when(serviceOrderDao.existsByAftersaleId(aftersaleId))
                 .thenReturn(false);
@@ -74,7 +74,7 @@ class ServiceOrderServiceTest {
 
     @Test
     void createServiceOrder_aftersaleNotExist() {
-        when(aftersaleFeign.getAftersale(anyLong(), anyLong()))
+        when(aftersaleFeign.findAftersaleByShopId(anyLong(), anyLong()))
                 .thenReturn(null);
 
         ReturnObject result =

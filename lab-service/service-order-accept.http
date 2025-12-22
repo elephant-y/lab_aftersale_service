@@ -1,5 +1,5 @@
 ### 维修人员接受服务单（正常场景）
-POST http://119.3.163.139:8080/maintainers/2/serviceorders/44/accept
+POST http://119.3.163.139:8080/maintainers/2/serviceorders/45/accept
 Content-Type: application/json
 
 {

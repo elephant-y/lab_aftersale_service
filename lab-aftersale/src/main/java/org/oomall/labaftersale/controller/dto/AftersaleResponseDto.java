@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Data
 public class AftersaleResponseDto {
     private Long id;
-    private Long customerId;
     private Long orderItemId;
     private Long shopId;
     private AftersaleType type; // 保持枚举类型
