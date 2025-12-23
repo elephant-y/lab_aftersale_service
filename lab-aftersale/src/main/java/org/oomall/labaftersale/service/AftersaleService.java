@@ -39,7 +39,6 @@ public class AftersaleService {
         return convertToResponseDto(po); // 转换Po为DTO
     }
 
-
     /**
      * 顾客提交售后申请，创建售后单（状态=APPLY）
      * @param orderItemId 订单商品ID（PATH参数）
@@ -116,8 +115,15 @@ public class AftersaleService {
     @Transactional
     public ReturnObject confirmAftersale(Long shopId, Long id, AftersaleDto dto) {
         // 参数校验
-        if (dto == null ) {
+        if (dto == null) {
             return new ReturnObject(ReturnNo.FIELD_NOTVALID);
+        }
+
+        // 校验售后类型是否合法
+        AftersaleType aftersaleType = AftersaleType.fromInt(dto.getType());
+        if (aftersaleType == null) {
+            log.error("【售后模块】审核售后单失败：售后类型不合法，id={}, type={}", id, dto.getType());
+            return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR, "售后类型不合法");
         }
 
         // 查询售后单
@@ -131,9 +137,9 @@ public class AftersaleService {
             return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         }
 
-        if (dto.isConfirm() && AftersaleType.fromInt(dto.getType()) == AftersaleType.REPAIR) {
+        if (dto.isConfirm() && aftersaleType == AftersaleType.REPAIR) {
             if (dto.getServiceType() == null || (ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SITEMENT && ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SHIPMENT)) {
-                return new ReturnObject(ReturnNo.FIELD_NOTVALID, "服务单类型必须为0（上门）或1（寄件）");
+                return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR, "服务单类型必须为0（上门）或1（寄件）");
             }
         }
 
@@ -165,55 +171,27 @@ public class AftersaleService {
 
         // 审核拒绝
         if (!dto.isConfirm()) {
-            handleRejectReview(po, dto, shopId);
+            po.setStatus(AftersaleStatus.REJECTED);
+            po.setServiceOrderId(null);
+            po.setType(AftersaleType.fromInt(dto.getType()));
+            log.info("【售后模块】审核拒绝售后单id={}", po.getId());
             return;
         }
 
         // 审核通过
-        handleApproveReview(po, vo, shopId);
-    }
-
-    /**
-     * 处理审核拒绝
-     */
-    private void handleRejectReview(AftersalePo po, AftersaleDto dto, Long shopId) {
-        po.setStatus(AftersaleStatus.REJECTED);
-        po.setServiceOrderId(null);
-        po.setType(AftersaleType.fromInt(dto.getType()));
-        log.info("【售后模块】审核拒绝售后单id={}", po.getId());
-    }
-
-    /**
-     * 处理审核通过
-     */
-    private void handleApproveReview(AftersalePo po, AftersaleConfirmVo vo, Long shopId) {
         // 设置售后类型
         po.setType(AftersaleType.fromInt(vo.getType()));
-
         // 根据售后类型获取对应的处理器
-        AftersaleHandler handler = createHandler(shopId, po, vo);
-        // 执行处理逻辑
-        handler.execute();
-    }
-
-    /**
-     * 创建对应的处理器
-     */
-    private AftersaleHandler createHandler(Long shopId, AftersalePo po, AftersaleConfirmVo vo) {
-        AftersaleType type = AftersaleType.fromInt(vo.getType());
-        if (type == null) {
-            throw new IllegalArgumentException("无效的售后类型: " + vo.getType());
-        }
-
-        switch (type) {
-            case REFUNDONLY:
-                return new RefundOnlyHandler(shopId, po, vo);
-            case RETURN:
-                return new ReturnHandler(shopId, po, vo);
-            case REPAIR:
-                return new RepairHandler(shopId, po, vo, serviceOrderFeign);
-            default:
-                throw new IllegalArgumentException("不支持的售后类型: " + type);
+        AftersaleHandler handler;
+        if (po.getType() == AftersaleType.REFUNDONLY) {
+            handler = new RefundOnlyHandler(shopId, po, vo);
+            handler.execute(); // 执行处理逻辑
+        } if (po.getType() == AftersaleType.RETURN) {
+            handler = new ReturnHandler(shopId, po, vo);
+            handler.execute();
+        } if (po.getType() == AftersaleType.REPAIR) {
+            handler = new RepairHandler(shopId, po, vo, serviceOrderFeign);
+            handler.execute();
         }
     }
 

@@ -7,10 +7,12 @@ public enum ReturnNo {
     FIELD_NOTVALID(503, "字段不合法"),
     RESOURCE_ID_NOTEXIST(504, "资源不存在"),
     STATE_NOT_ALLOW(507, "当前状态不允许此操作"),
+    RESOURCE_NOT_ALLOW(508, "资源不允许此操作"),
 
     // ===== 售后 / 服务单相关 =====
-    AFTERSALE_TYPE_ERROR(801, "售后/服务类型错误"),
-    SERVICE_ORDER_CREATE_FAIL(802, "创建服务单失败");
+    AFTERSALE_TYPE_ERROR(801, "售后类型错误"),
+    SERVICE_ORDER_CREATE_FAIL(802, "创建服务单失败"),
+    SERVICE_TYPE_ERROR(803, "服务类型错误");
 
     private final int errNo;
     private final String message;
