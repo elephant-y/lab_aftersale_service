@@ -23,7 +23,7 @@ public class ServiceOrderDao {
         return serviceOrderRepository.countByAftersaleId(aftersaleId) > 0;
     }
 
-    public int insert(ServiceOrderPo serviceOrderPo) {
+    public int save(ServiceOrderPo serviceOrderPo) {
         return serviceOrderRepository.save(serviceOrderPo).getId().intValue();
     }
 }

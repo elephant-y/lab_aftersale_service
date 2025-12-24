@@ -123,14 +123,14 @@ class ServiceOrderDaoTest {
     }
 
     @Test
-    @DisplayName("insert - 正常保存并返回 ID")
-    void insert_shouldSaveAndReturnId() {
+    @DisplayName("save - 正常保存并返回 ID")
+    void save_shouldSaveAndReturnId() {
         ServiceOrderPo po = buildOrderPo();
         // 模拟 save 返回的对象（ID 已设置）
         ServiceOrderPo savedPo = buildOrderPo();
         when(serviceOrderRepository.save(eq(po))).thenReturn(savedPo);
 
-        int returnedId = serviceOrderDao.insert(po);
+        int returnedId = serviceOrderDao.save(po);
 
         assertThat(returnedId).isEqualTo(ORDER_ID.intValue());
         verify(serviceOrderRepository, times(1)).save(po);

@@ -85,7 +85,7 @@ class ServiceOrderServiceTest {
                 serviceOrderService.createServiceOrder(shopId, aftersaleId, dto);
 
         assertEquals(0, result.getErrno());
-        verify(serviceOrderDao).insert(any(ServiceOrderPo.class));
+        verify(serviceOrderDao).save(any(ServiceOrderPo.class));
     }
 
     @Test
@@ -132,16 +132,16 @@ class ServiceOrderServiceTest {
         when(serviceOrderDao.existsByAftersaleId(aftersaleId))
                 .thenReturn(false);
 
-        // Mock serviceOrderDao.insert抛出异常
+        // Mock serviceOrderDao.save抛出异常
         doThrow(new RuntimeException("Database error"))
-                .when(serviceOrderDao).insert(any(ServiceOrderPo.class));
+                .when(serviceOrderDao).save(any(ServiceOrderPo.class));
 
         // When
         ReturnObject result = serviceOrderService.createServiceOrder(shopId, aftersaleId, dto);
 
         // Then
         assertEquals(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getErrNo(), result.getErrno());
-        verify(serviceOrderDao).insert(any(ServiceOrderPo.class));
+        verify(serviceOrderDao).save(any(ServiceOrderPo.class));
     }
 
 
@@ -443,7 +443,7 @@ class ServiceOrderServiceTest {
 
         // Then
         assertEquals(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getErrNo(), result.getErrno());
-        verify(serviceOrderDao, never()).insert(any());
+        verify(serviceOrderDao, never()).save(any());
     }
 
 
@@ -524,7 +524,7 @@ class ServiceOrderServiceTest {
 
         // Then
         assertEquals(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getErrNo(), result.getErrno());
-        verify(serviceOrderDao, never()).insert(any());
+        verify(serviceOrderDao, never()).save(any());
     }
 
     @Test
@@ -602,7 +602,7 @@ class ServiceOrderServiceTest {
 
         // Then
         assertEquals(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getErrNo(), result.getErrno());
-        verify(serviceOrderDao, never()).insert(any());
+        verify(serviceOrderDao, never()).save(any());
     }
 
     /* ========================= 完成服务单 ========================= */
@@ -719,6 +719,6 @@ class ServiceOrderServiceTest {
 
         // Then
         assertEquals(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getErrNo(), result.getErrno());
-        verify(serviceOrderDao, never()).insert(any());
+        verify(serviceOrderDao, never()).save(any());
     }
 }
