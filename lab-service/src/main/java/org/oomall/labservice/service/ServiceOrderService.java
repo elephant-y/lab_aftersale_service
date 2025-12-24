@@ -44,7 +44,7 @@ public class ServiceOrderService {
         return po;
     }
 
-    public ReturnObject createServiceOrder(Long shopId, Long aftersaleId, ServiceOrderDto vo) {
+    public ReturnObject createServiceOrder(Long shopId, Long aftersaleId, ServiceOrderDto dto) {
 
         AftersalePo aftersale = aftersaleFeign.findAftersaleByShopId(shopId, aftersaleId);
         if (aftersale == null) {
@@ -59,11 +59,11 @@ public class ServiceOrderService {
 
         po.setShopId(shopId);
         po.setAftersaleId(aftersaleId);
-        po.setServiceType(vo.getServiceType());
-        po.setConsigneeName(vo.getConsignee().getName());
-        po.setConsigneeMobile(vo.getConsignee().getMobile());
-        po.setConsigneeRegionId(vo.getConsignee().getRegionId());
-        po.setConsigneeAddress(vo.getConsignee().getAddress());
+        po.setServiceType(dto.getServiceType());
+        po.setConsigneeName(dto.getConsignee().getName());
+        po.setConsigneeMobile(dto.getConsignee().getMobile());
+        po.setConsigneeRegionId(dto.getConsignee().getRegionId());
+        po.setConsigneeAddress(dto.getConsignee().getAddress());
         po.setGmtCreate(LocalDateTime.now());
         po.setGmtModified(LocalDateTime.now());
 
