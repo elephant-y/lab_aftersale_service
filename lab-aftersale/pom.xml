@@ -94,6 +94,19 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <!-- Redis（版本由 spring-boot-starter-parent 统一管理，不写 version） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Redisson 分布式锁（核心包 + 自己写配置类，避免 starter 自动装配的版本耦合） -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.27.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -106,7 +119,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
+                            <version>1.18.48</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

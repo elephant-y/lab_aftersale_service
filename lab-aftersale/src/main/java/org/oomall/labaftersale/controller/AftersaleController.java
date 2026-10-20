@@ -29,7 +29,7 @@ public class AftersaleController {
             @PathVariable Long shopId,
             @PathVariable Long id) {
         log.info("【售后模块】商户查询售后信息，shopId={}, aftersaleId={}", shopId, id);
-        AftersaleResponseDto dto = aftersaleService.getAftersale(shopId, id);
+        AftersaleResponseDto dto = aftersaleService.findAftersaleByShopId(shopId, id);
         if (dto == null) {
             return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST, "售后单不存在或不属于当前商户");
         }

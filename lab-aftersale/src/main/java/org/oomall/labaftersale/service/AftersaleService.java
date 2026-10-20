@@ -1,26 +1,34 @@
 package org.oomall.labaftersale.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+
 import org.oomall.labaftersale.controller.dto.AftersaleApplyDto;
 import org.oomall.labaftersale.controller.dto.AftersaleDto;
+import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
 import org.oomall.labaftersale.dao.AftersaleDao;
 import org.oomall.labaftersale.feign.ServiceOrderFeign;
-
 import org.oomall.labaftersale.mapper.po.AftersalePo;
 import org.oomall.labaftersale.mapper.po.Consignee;
 import org.oomall.labaftersale.model.AftersaleStatus;
 import org.oomall.labaftersale.model.AftersaleType;
 import org.oomall.labaftersale.model.ReturnNo;
 import org.oomall.labaftersale.model.ReturnObject;
-import org.oomall.labaftersale.service.vo.AftersaleConfirmVo;
-import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
 import org.oomall.labaftersale.model.ServiceOrderType;
+import org.oomall.labaftersale.service.vo.AftersaleConfirmVo;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
@@ -31,12 +39,65 @@ public class AftersaleService {
     private final AftersaleDao aftersaleDao;
     private final ServiceOrderFeign serviceOrderFeign;
 
+    // ===== Redis 缓存 =====
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
+
+    // ===== Redisson 分布式锁 =====
+    private final RedissonClient redissonClient;
+
+    /** 缓存 key 前缀，格式：aftersale:shop:{shopId}:{id} */
+    private static final String CACHE_KEY_PREFIX = "aftersale:shop:";
+    /** 缓存过期时间：10 分钟（写操作会主动删缓存，TTL 只是兜底） */
+    private static final Duration CACHE_TTL = Duration.ofMinutes(10);
+
+    /** 组装缓存 key */
+    private String cacheKey(Long shopId, Long id) {
+        return CACHE_KEY_PREFIX + shopId + ":" + id;
+    }
+
+    /** 删除缓存（缓存属于旁路增强，失败不能影响主业务） */
+    private void evictCache(Long shopId, Long id) {
+        try {
+            stringRedisTemplate.delete(cacheKey(shopId, id));
+        } catch (Exception e) {
+            log.warn("【售后模块】删除缓存失败，shopId={}, id={}", shopId, id, e);
+        }
+    }
+
     public AftersaleResponseDto findAftersaleByShopId(Long shopId, Long id) {
+        String key = cacheKey(shopId, id);
+
+        // 1. 先查缓存（Redis 故障时降级为直接查库，不影响主业务）
+        String cached = null;
+        try {
+            cached = stringRedisTemplate.opsForValue().get(key);
+        } catch (Exception e) {
+            log.warn("【售后模块】读取缓存失败，降级查库，key={}", key, e);
+        }
+        if (cached != null) {
+            try {
+                return objectMapper.readValue(cached, AftersaleResponseDto.class);
+            } catch (Exception e) {
+                // 反序列化失败就当作未命中，回源数据库
+                log.warn("【售后模块】缓存反序列化失败，回源数据库，key={}", key, e);
+            }
+        }
+
+        // 2. 缓存未命中，查数据库
         AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
         if (po == null) {
             return null;
         }
-        return convertToResponseDto(po); // 转换Po为DTO
+        AftersaleResponseDto dto = convertToResponseDto(po);
+
+        // 3. 回填缓存（写缓存失败不能影响主流程）
+        try {
+            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(dto), CACHE_TTL);
+        } catch (Exception e) {
+            log.warn("【售后模块】写入缓存失败，key={}", key, e);
+        }
+        return dto;
     }
 
     /**
@@ -68,7 +129,18 @@ public class AftersaleService {
             log.error("【售后模块】创建售后单失败：收件人姓名/电话不能为空，orderItemId={}", orderItemId);
             return new ReturnObject(ReturnNo.FIELD_NOTVALID, "收件人姓名和电话为必填项");
         }
-
+        try
+        {
+             Boolean first = stringRedisTemplate.opsForValue()
+            .setIfAbsent("aftersale:apply:" + orderItemId, "1", Duration.ofSeconds(10));
+            if (Boolean.FALSE.equals(first)) {
+                return new ReturnObject(ReturnNo.STATE_NOT_ALLOW, "该订单商品已提交售后，请勿重复申请");
+            }
+        }
+        catch(Exception e)
+        {
+            log.warn("【售后模块】redis异常");
+        }
         // 4. 校验是否已提交过售后（通过order_item_id唯一约束）
         if (aftersaleDao.existsByOrderItemId(orderItemId)) {
             log.error("【售后模块】创建售后单失败：该订单商品已提交售后，orderItemId={}", orderItemId);
@@ -104,6 +176,13 @@ public class AftersaleService {
             log.info("【售后模块】售后单创建成功，orderItemId={}, 售后单ID={}, 状态=APPLY",
                     orderItemId, aftersalePo.getId());
         } catch (Exception e) {
+            // 入库失败：删除防重标记，让用户可以立即重试（否则要干等 10 秒 TTL 过期）
+            // 删除也要 try-catch：Redis 挂了不能让删除异常盖掉原来的入库错误
+            try {
+                stringRedisTemplate.delete("aftersale:apply:" + orderItemId);
+            } catch (Exception ex) {
+                log.warn("【售后模块】删除防重标记失败，orderItemId={}", orderItemId, ex);
+            }
             log.error("【售后模块】创建售后单入库失败，orderItemId={}", orderItemId, e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL, "售后单创建失败");
         }
@@ -119,38 +198,83 @@ public class AftersaleService {
             return new ReturnObject(ReturnNo.FIELD_NOTVALID);
         }
 
-        // 校验售后类型是否合法
-        AftersaleType aftersaleType = AftersaleType.fromInt(dto.getType());
-        if (aftersaleType == null) {
-            log.error("【售后模块】审核售后单失败：售后类型不合法，id={}, type={}", id, dto.getType());
-            return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR, "售后类型不合法");
+        // ===== 分布式锁（Redisson）：防止并发审核同一张售后单 =====
+        RLock lock = redissonClient.getLock("aftersale:lock:" + id);
+        boolean locked;   // 是否放行执行
+        boolean acquired; // 是否真正持有锁（决定 finally 是否需要释放）
+        try {
+            // waitTime=0：不排队，拿不到立即失败；leaseTime=-1：启用看门狗自动续期
+            acquired = lock.tryLock(0, -1, TimeUnit.SECONDS);
+            locked = acquired;
+        } catch (Exception e) {
+            // Redis 故障降级放行（锁只是并发保护，不能因 Redis 挂了阻塞正常审核）
+            log.warn("【售后模块】获取分布式锁失败，降级继续执行，aftersaleId={}", id, e);
+            acquired = false;
+            locked = true;
+        }
+        if (!locked) {
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW, "售后单正在处理中，请勿重复操作");
         }
 
-        // 查询售后单
-        AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
-        if (po == null) {
-            return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
-        }
+        try {
+            // 校验售后类型是否合法
+            AftersaleType aftersaleType = AftersaleType.fromInt(dto.getType());
+            if (aftersaleType == null) {
+                log.error("【售后模块】审核售后单失败：售后类型不合法，id={}, type={}", id, dto.getType());
+                return new ReturnObject(ReturnNo.AFTERSALE_TYPE_ERROR, "售后类型不合法");
+            }
 
-        // 状态校验
-        if (!AftersaleStatus.APPLIED.equals(po.getStatus())) {
-            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
-        }
+            // 查询售后单
+            AftersalePo po = aftersaleDao.findByIdAndShopId(id, shopId);
+            if (po == null) {
+                return new ReturnObject(ReturnNo.RESOURCE_ID_NOTEXIST);
+            }
 
-        if (dto.isConfirm() && aftersaleType == AftersaleType.REPAIR) {
-            if (dto.getServiceType() == null || (ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SITEMENT && ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SHIPMENT)) {
-                return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR, "服务单类型必须为0（上门）或1（寄件）");
+            // 状态校验
+            if (!AftersaleStatus.APPLIED.equals(po.getStatus())) {
+                return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
+            }
+
+            if (dto.isConfirm() && aftersaleType == AftersaleType.REPAIR) {
+                if (dto.getServiceType() == null || (ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SITEMENT && ServiceOrderType.fromInt(dto.getServiceType()) != ServiceOrderType.SHIPMENT)) {
+                    return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR, "服务单类型必须为0（上门）或1（寄件）");
+                }
+            }
+
+            // 处理审核结果
+            handleAftersaleReview(po, dto, shopId);
+            po.setGmtModified(LocalDateTime.now()); // 更新修改时间
+
+            // 保存更新后的售后单
+            aftersaleDao.save(po);
+
+            // 先更新数据库，成功后删除缓存，保证下次查询读到最新数据
+            evictCache(shopId, id);
+
+            return new ReturnObject(ReturnNo.OK);
+        } finally {
+            if (acquired) {
+                // 关键：锁必须在【事务提交之后】释放。
+                // 若在 finally 直接释放，锁先于事务提交释放，别的请求会拿到锁并读到未提交的旧数据，
+                // 导致并发校验失效。因此这里只注册回调，由 Spring 在事务结束（提交或回滚）后触发释放。
+                // Redisson 的 unlock 内部用 Lua 校验持有者并原子删除，误删他人锁的问题由它解决。
+                try {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCompletion(int status) {
+                            if (lock.isHeldByCurrentThread()) {
+                                lock.unlock();
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    // 没有活跃事务同步时（异常路径），退化为立即释放
+                    if (lock.isHeldByCurrentThread()) {
+                        lock.unlock();
+                    }
+                }
             }
         }
-
-        // 处理审核结果
-        handleAftersaleReview(po, dto, shopId);
-        po.setGmtModified(LocalDateTime.now()); // 更新修改时间
-
-        // 保存更新后的售后单
-        aftersaleDao.save(po);
-
-        return new ReturnObject(ReturnNo.OK);
     }
 
     /**
@@ -217,6 +341,9 @@ public class AftersaleService {
         po.setStatus(status);
         po.setGmtModified(LocalDateTime.now());
         aftersaleDao.save(po);
+
+        // 状态变更后删除缓存（此方法也会被 lab-service 通过 Feign 回调）
+        evictCache(shopId, id);
 
         log.info("【售后模块】售后单状态更新成功，aftersaleId={}, 新状态={}", id, status);
         return new ReturnObject(ReturnNo.OK);
