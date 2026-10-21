@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS aftersale (
     consignee_address   VARCHAR(255),
     gmt_create          DATETIME(6),
     gmt_modified        DATETIME(6),
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    -- 唯一索引兜底：应用层 SETNX/DB 查重可能被并发绕过，数据库约束是最后防线
+    UNIQUE KEY uk_order_item (order_item_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- ---------- lab-service 服务库 ----------

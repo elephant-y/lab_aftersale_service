@@ -19,6 +19,7 @@ import org.oomall.labaftersale.model.ServiceOrderType;
 import org.oomall.labaftersale.service.vo.AftersaleConfirmVo;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -170,11 +171,17 @@ public class AftersaleService {
 
         aftersalePo.setGmtCreate(LocalDateTime.now()); // 设置创建时间
         aftersalePo.setGmtModified(LocalDateTime.now()); // 设置修改时间
-        // 6. 入库保存
+        // 6. 入库保存（独立事务，唯一索引冲突只回滚内层事务）
         try {
-            aftersaleDao.save(aftersalePo);
+            aftersaleDao.saveNew(aftersalePo);
             log.info("【售后模块】售后单创建成功，orderItemId={}, 售后单ID={}, 状态=APPLY",
                     orderItemId, aftersalePo.getId());
+        } catch (DataIntegrityViolationException e) {
+            // 唯一索引兜底拦截：并发下绕过 SETNX 和 DB 查重的请求，最终由数据库约束挡下。
+            // 注意 JPA 异常翻译抛出的是 DataIntegrityViolationException（DuplicateKeyException 的父类）。
+            // 不删除防重标记——数据已存在，重复提交本就应该被拒绝
+            log.warn("【售后模块】唯一索引拦截重复提交，orderItemId={}", orderItemId);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW, "该订单商品已提交售后，请勿重复申请");
         } catch (Exception e) {
             // 入库失败：删除防重标记，让用户可以立即重试（否则要干等 10 秒 TTL 过期）
             // 删除也要 try-catch：Redis 挂了不能让删除异常盖掉原来的入库错误
