@@ -32,12 +32,12 @@ public abstract class ServiceTypeHandler {
 
     protected abstract void checkFinishState(ServiceOrderPo order);
 
-    /* ===== 寄件专用（默认不支持） ===== */
+    /* ===== 寄件专用（默认不支持：上门服务调用即抛异常，由 Service 层转为 SERVICE_TYPE_ERROR） ===== */
     public void receiveProduct(ServiceOrderPo order) {
-        log.info("【寄件服务】该状态不支持接收产品，serviceOrderId={}", order.getId());
+        throw new UnsupportedOperationException("该服务类型不支持接收产品");
     }
 
     public void sendProduct(ServiceOrderPo order) {
-        log.info("【寄件服务】该状态不支持发送产品，serviceOrderId={}", order.getId());
+        throw new UnsupportedOperationException("该服务类型不支持发送产品");
     }
 }

@@ -2,11 +2,14 @@ package org.oomall.labservice.service;
 
 
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.oomall.labservice.controller.dto.ServiceOrderDto;
 import org.oomall.labservice.dao.MaintainerDao;
 import org.oomall.labservice.dao.ServiceOrderDao;
@@ -20,12 +23,20 @@ import org.oomall.labservice.model.ReturnNo;
 import org.oomall.labservice.model.ReturnObject;
 import org.oomall.labservice.model.ServiceOrderStatus;
 import org.oomall.labservice.model.ServiceOrderType;
+import org.oomall.labservice.service.servicetype.ServiceTypeHandlerFactory;
+import org.oomall.labservice.service.servicetype.ShipServiceHandler;
+import org.oomall.labservice.service.servicetype.SiteServiceHandler;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ServiceOrderServiceTest {
 
     @InjectMocks
@@ -42,6 +53,35 @@ class ServiceOrderServiceTest {
 
     @Mock
     private MaintainerDao maintainerDao;
+
+    @Mock
+    private ServiceTypeHandlerFactory handlerFactory;
+
+    // ===== Redis 相关依赖(本项目缓存) =====
+    @Mock
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUpRedisMocks() throws JsonProcessingException {
+        // 缓存读:默认未命中,走数据库
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+        // 缓存回填序列化
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+        // 策略工厂:按服务类型返回真实处理器,保留业务逻辑
+        when(handlerFactory.get(anyInt())).thenAnswer(invocation -> {
+            int type = invocation.getArgument(0);
+            return ServiceOrderType.from(type) == ServiceOrderType.SHIPMENT
+                    ? new ShipServiceHandler()
+                    : new SiteServiceHandler();
+        });
+    }
 
     /* ========================= 查询服务单 ========================= */
     @Test
@@ -109,7 +149,8 @@ class ServiceOrderServiceTest {
         ReturnObject result =
                 serviceOrderService.createServiceOrder(1L, 1L, new ServiceOrderDto());
 
-        assertEquals(508, result.getErrno());
+        // 重复创建服务单按"状态不允许"拒绝(与售后模块防重语义一致)
+        assertEquals(507, result.getErrno());
     }
 
     @Test
@@ -389,6 +430,7 @@ class ServiceOrderServiceTest {
     @Test
     void refuseServiceOrder_success() {
         ServiceOrderPo order = new ServiceOrderPo();
+        order.setServiceType(ServiceOrderType.SITEMENT.ordinal());
         order.setStatus(ServiceOrderStatus.ASSIGNED.ordinal());
 
         when(serviceOrderDao.findByIdAndMaintainerId(anyLong(), anyLong()))

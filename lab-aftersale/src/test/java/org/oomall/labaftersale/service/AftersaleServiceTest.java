@@ -1,11 +1,14 @@
 package org.oomall.labaftersale.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.oomall.labaftersale.controller.dto.AftersaleApplyDto;
 import org.oomall.labaftersale.controller.dto.AftersaleDto;
 import org.oomall.labaftersale.controller.dto.AftersaleResponseDto;
@@ -14,18 +17,26 @@ import org.oomall.labaftersale.feign.ServiceOrderFeign;
 import org.oomall.labaftersale.mapper.po.AftersalePo;
 import org.oomall.labaftersale.mapper.po.Consignee;
 import org.oomall.labaftersale.model.*;
-import org.oomall.labaftersale.service.vo.AftersaleConfirmVo;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.oomall.labaftersale.model.AftersaleType.fromInt;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AftersaleServiceTest {
 
     @Mock
@@ -34,8 +45,39 @@ class AftersaleServiceTest {
     @Mock
     private ServiceOrderFeign serviceOrderFeign;
 
+    // ===== Redis 相关依赖（本项目缓存/防重/分布式锁） =====
+    @Mock
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
+    private RedissonClient redissonClient;
+
+    @Mock
+    private RLock rLock;
+
     @InjectMocks
     private AftersaleService aftersaleService;
+
+    @BeforeEach
+    void setUpRedisMocks() throws InterruptedException, JsonProcessingException {
+        // 缓存/防重:统一走 ValueOperations
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        // SETNX 防重:默认拿到"先到权"
+        when(valueOperations.setIfAbsent(anyString(), anyString(), any(Duration.class)))
+                .thenReturn(true);
+        // 分布式锁:默认拿锁成功且持有
+        when(redissonClient.getLock(anyString())).thenReturn(rLock);
+        when(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(true);
+        when(rLock.isHeldByCurrentThread()).thenReturn(true);
+        // 缓存回填序列化
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+    }
 
     // ================= findAftersale =================
     @Test
@@ -101,7 +143,7 @@ class AftersaleServiceTest {
             AftersalePo po = invocation.getArgument(0);
             po.setId(1L); // 手动赋 ID
             return null; // save 方法返回 void
-        }).when(aftersaleDao).save(any(AftersalePo.class));
+        }).when(aftersaleDao).saveNew(any(AftersalePo.class));
 
         ReturnObject ret = aftersaleService.createAftersale(100L, dto);
 
@@ -259,7 +301,7 @@ class AftersaleServiceTest {
         dto.setConsignee(consignee);
 
         doThrow(new RuntimeException("数据库异常"))
-                .when(aftersaleDao).save(any(AftersalePo.class));
+                .when(aftersaleDao).saveNew(any(AftersalePo.class));
 
         ReturnObject ret = aftersaleService.createAftersale(100L, dto);
         assertEquals(ReturnNo.SERVICE_ORDER_CREATE_FAIL.getErrNo(), ret.getErrno());

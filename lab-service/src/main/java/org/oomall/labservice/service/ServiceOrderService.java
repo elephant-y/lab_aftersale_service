@@ -193,6 +193,14 @@ public class ServiceOrderService {
             return new ReturnObject(ReturnNo.OK, order);
 
 
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            // 服务类型非法（枚举转换失败）或该类型不支持此操作
+            log.warn("【服务模块】接单失败：服务类型不支持，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR);
+        } catch (IllegalStateException e) {
+            // 状态机校验不通过（处理器抛出）
+            log.warn("【服务模块】接单失败：状态不允许，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         } catch (Exception e) {
             log.error("【服务模块】接单异常", e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
@@ -222,6 +230,12 @@ public class ServiceOrderService {
             evictCache(order.getShopId(), order.getId());
             return new ReturnObject(ReturnNo.OK, order);
 
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            log.warn("【服务模块】拒单失败：服务类型不支持，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR);
+        } catch (IllegalStateException e) {
+            log.warn("【服务模块】拒单失败：状态不允许，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         } catch (Exception e) {
             log.error("【服务模块】拒单异常", e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
@@ -248,6 +262,12 @@ public class ServiceOrderService {
             return new ReturnObject(ReturnNo.OK, order);
 
 
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            log.warn("【服务模块】签收失败：服务类型不支持，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR);
+        } catch (IllegalStateException e) {
+            log.warn("【服务模块】签收失败：状态不允许，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         } catch (Exception e) {
             log.error("【服务模块】接收产品异常", e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
@@ -273,6 +293,12 @@ public class ServiceOrderService {
             return new ReturnObject(ReturnNo.OK, order);
 
 
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            log.warn("【服务模块】发出失败：服务类型不支持，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR);
+        } catch (IllegalStateException e) {
+            log.warn("【服务模块】发出失败：状态不允许，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         } catch (Exception e) {
             log.error("【服务模块】发送产品异常", e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
@@ -301,6 +327,12 @@ public class ServiceOrderService {
             return new ReturnObject(ReturnNo.OK, order);
 
 
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            log.warn("【服务模块】完成失败：服务类型不支持，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.SERVICE_TYPE_ERROR);
+        } catch (IllegalStateException e) {
+            log.warn("【服务模块】完成失败：状态不允许，serviceOrderId={}", id, e);
+            return new ReturnObject(ReturnNo.STATE_NOT_ALLOW);
         } catch (Exception e) {
             log.error("【服务模块】完成服务单异常", e);
             return new ReturnObject(ReturnNo.SERVICE_ORDER_CREATE_FAIL);
